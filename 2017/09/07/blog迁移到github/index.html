@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> blog迁移到github · SillyGe's blog</title><meta name="description" content="blog迁移到github - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">blog迁移到github</h1><div class="post-info">Sep 7, 2017</div><div class="post-content"><p>之前是想直接把原有vue搭建的页面直接丢到github上<br>但是由于我没有搞https，所以在github上打开博客会发生报错。说我在https页面，却去我的服务器上 请求http接口。<br>然后就有两个选择<br>1.申请域名，搞htpps<br>2.</p>
+<p>1.<a href="https://hexo.io/zh-cn/docs/deployment.html#Git" target="_blank" rel="external">https://hexo.io/zh-cn/docs/deployment.html#Git</a></p>
+<p>2.安装 Hexo<br>  所有必备的应用程序安装完成后，即可使用 npm 安装 Hexo。<br>  $ npm install -g hexo-cli</p>
+<p>3.新建工程<br>  $ cd blog<br>  $ hexo init .<br>  $ npm install<br>  $ hexo server<br>  便可以在 <a href="http://localhost:4000/" target="_blank" rel="external">http://localhost:4000/</a> 预览</p>
+<p>4.更换主题<br>  在<a href="https://hexo.io/themes/" target="_blank" rel="external">https://hexo.io/themes/</a> 找一个喜欢的主题。<br>  比如apollo <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank" rel="external">https://github.com/pinggod/hexo-theme-apollo</a> 按照提示操作<br>  1.安装主题插件，下载主题文件<br>  $ npm install –save hexo-renderer-jade hexo-generator-feed hexo-generator-sitemap hexo-browsersync hexo-generator-archive<br>  $ git clone <a href="https://github.com/pinggod/hexo-theme-apollo.git" target="_blank" rel="external">https://github.com/pinggod/hexo-theme-apollo.git</a> themes/apollo</p>
+<p>  2./修改 _config.yml 的 theme 配置项为 apollo:<br>    theme: apollo</p>
+<pre><code># 在归档页面显示所有文章
+# 需要上面安装的 hexo-generator-archive 插件支持
+archive_generator:
+    per_page: 0
+    yearly: false
+    monthly: false
+    daily: false
+</code></pre><p>  3.$ hexo server 可以在 <a href="http://localhost:4000/" target="_blank" rel="external">http://localhost:4000/</a> 预览新的主题</p>
+<p> 5.部署到github<br>      1.安装 hexo-deployer-git。<br>      $ npm install hexo-deployer-git –save</p>
+<pre><code>2./修改 _config.yml 文件
+deploy:
+ type: git
+ repository: https://github.com/ChenZhangQuan/ChenZhangQuan.github.io.git
+ branch: master
+3.打开 https://chenzhangquan.github.io/ 浏览blog
+</code></pre><p>6.平时写博客时候的操作<br>  1.在 /source/_posts 目录下生成md文件，编辑文章。<br>  2.hexo s实时查看文章<br>  3.hexo g生成静态文件<br>  4.hexo d推到github<br>  5.github预览</p>
+<p>7.附录 markdown语法使用链接<a href="https://www.appinn.com/markdown/" target="_blank" rel="external">https://www.appinn.com/markdown/</a></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/10/13/xcode8-》xcode9问题/" class="prev">PREV</a><a href="/2017/09/07/hexo 指令集合/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

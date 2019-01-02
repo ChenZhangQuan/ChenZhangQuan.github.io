@@ -1,0 +1,120 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 使用Cocoapods创建私有podspec · SillyGe's blog</title><meta name="description" content="使用Cocoapods创建私有podspec - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">使用Cocoapods创建私有podspec</h1><div class="post-info">Jul 27, 2017</div><div class="post-content"><p>1.创建私有Spec Repo<br>  就是去git上创建一个代码仓库<a href="https://git.oschina.net/luckily7/WTSpecs.git" target="_blank" rel="external">https://git.oschina.net/luckily7/WTSpecs.git</a></p>
+<p>2.终端里敲pod repo add WTSpecs <a href="https://git.oschina.net/luckily7/WTSpecs.git" target="_blank" rel="external">https://git.oschina.net/luckily7/WTSpecs.git</a><br>  cd ~/.cocoapods/repos 会发现目录里多了一个WTSpecs文件<br>  就是clone了第一步创建的代码</p>
+<p>3.创建Pod项目工程文件<br>  1.在去git上创建一个代码仓库<a href="https://git.oschina.net/luckily7/podTestLibrary.git" target="_blank" rel="external">https://git.oschina.net/luckily7/podTestLibrary.git</a><br>    用来存储Pod项目工程</p>
+<p>  2.cd到要创建项目的目录然后执行<br>  pod lib create podTestLibrary</p>
+<p>  3.将工程目录倒入代码仓库</p>
+<p>  cd podTestLibrary</p>
+<p>  git add .<br>  git commit -s -m “Initial Commit of Library”<br>  git remote add origin <a href="https://git.oschina.net/luckily7/podTestLibrary.git" target="_blank" rel="external">https://git.oschina.net/luckily7/podTestLibrary.git</a></p>
+<p>  若上一步操作报fatal: remote origin already exists.<br>  那就先执行<br>  git remote rm origin<br>  再执行<br>  git remote add origin <a href="https://git.oschina.net/luckily7/podTestLibrary.git" target="_blank" rel="external">https://git.oschina.net/luckily7/podTestLibrary.git</a></p>
+<p>  #添加远端仓库<br>  git push origin master     #提交到远端仓库</p>
+<p>  若报错:<br>  To <a href="https://git.oschina.net/luckily7/podTestLibrary.git" target="_blank" rel="external">https://git.oschina.net/luckily7/podTestLibrary.git</a><br>   ! [rejected]        master -&gt; master (non-fast-forward)<br>  error: failed to push some refs to ‘<a href="https://git.oschina.net/luckily7/podTestLibrary.git" target="_blank" rel="external">https://git.oschina.net/luckily7/podTestLibrary.git</a>‘<br>  hint: Updates were rejected because the tip of your current branch is behind<br>  hint: its remote counterpart. Integrate the remote changes (e.g.<br>  hint: ‘git pull …’) before pushing again.<br>  hint: See the ‘Note about fast-forwards’ in ‘git push –help’ for details.<br>  则先git pull<br>  解决完冲突之后<br>  git add .<br>  git commit -s -m “your commit”<br>  git push</p>
+<p>  操作完以上操作之后，本地文件就应该和git上的代码同步了</p>
+<p>  4.编辑podspec文件<br>    podspec文件是用来描述你发布pod的版本信息的文件。所以每次发布前必须要编辑这个文件。</p>
+<pre><code>编辑完podspec文件后，需要验证一下这个文件是否可用，如果有任何WARNING或者ERROR都是不可以的，它就不能被添加到Spec Repo中，不过xcode的WARNING是可以存在的，验证需要执行一下命令
+pod lib lint
+当你看到
+PodTestLibrary (0.1.0)
+PodTestLibrary passed validation.
+时，说明验证通过了，不过这只是这个podspec文件是合格的，不一定说明这个Pod是可以用的，我们需要在本地做一下验证，这就是第四步的内容了，第四步在具体说明。
+注:编辑podspec文件问题可能会比较多，就跟着提示一个个改就好了。
+
+1.那选择直接先执行下pod lib lint
+他会提示一下错误
+-&gt; ${POD_NAME} (0.1.0)
+   - ERROR | name: The name of the spec should match the name of the file.
+   - WARN  | summary: The summary is not meaningful.
+   - WARN  | url: There was a problem validating the URL https://github.com/${USER_NAME}/${POD_NAME}.
+   - ERROR | [iOS] unknown: Encountered an unknown error (No podspec found for `${POD_NAME}` in `/Users/chenzhangquan/Desktop/ZQPodSpecs/podTestLibrary`) during validation.
+
+The name of the spec should match the name of the file. 意思是说，你这个文件podspec文件名字跟项目对不上。
+解决办法:把工程目录下的NAME.podspec文件重命名一下，改成 你项目名字.podspec。因为这里项目名字是叫PodTestLibrary，所以我改成PodTestLibrary.podspec，然后把PodTestLibrary.podspec文件里的名字改一下
+s.name             = &quot;PodTestLibrary&quot;    #名称
+
+2.接下来根据提示一步步改，这里有个文件模版，你们可以对着改
+    Pod::Spec.new do |s|
+      s.name             = &apos;PodTestLibrary&apos;
+      s.version          = &apos;0.1.0&apos;
+      s.summary          = &apos;this is a summary of PodTestLibrary xixi.&apos;
+
+    # This description is used to generate tags and improve search results.
+    #   * Think: What does it do? Why did you write it? What is the focus?
+    #   * Try to keep it short, snappy and to the point.
+    #   * Write the description between the DESC delimiters below.
+    #   * Finally, don&apos;t worry about the indent, CocoaPods strips it!
+
+      s.description      = &quot;this is a description of PodTestLibrary longer than summary&quot;
+
+      s.homepage         = &apos;https://git.oschina.net/luckily7/podTestLibrary&apos;
+      # s.screenshots     = &apos;www.example.com/screenshots_1&apos;, &apos;www.example.com/screenshots_2&apos;
+      s.license          = { :type =&gt; &apos;MIT&apos;, :file =&gt; &apos;LICENSE&apos; }
+      s.author           = { &apos;SillyGe&apos; =&gt; &apos;379903023@qq.com&apos; }
+      s.source           = { :git =&gt; &apos;https://git.oschina.net/luckily7/podTestLibrary.git&apos;, :tag =&gt; s.version.to_s }
+      # s.social_media_url = &apos;https://twitter.com/&lt;TWITTER_USERNAME&gt;&apos;
+
+      s.ios.deployment_target = &apos;8.0&apos;
+
+      s.source_files = &apos;Pod/Classes/**/*&apos;
+
+      # s.resource_bundles = {
+      #   &apos;${POD_NAME}&apos; =&gt; [&apos;${POD_NAME}/Assets/*.png&apos;]
+      # }
+
+      # s.public_header_files = &apos;Pod/Classes/**/*.h&apos;
+      # s.frameworks = &apos;UIKit&apos;, &apos;MapKit&apos;
+      # s.dependency &apos;AFNetworking&apos;, &apos;~&gt; 2.3&apos;
+    end
+
+  第二部配置完pod lib lint，应该就成功展现
+  绿色PodTestLibrary passed validation.了（如果还有问题，，，跟着提示改吧。）
+
+3.接下来把修改完的工程目录再更新到git上，
+  还是老操作三步骤
+  git add .
+  git commit -m &quot;second commit for sepc&quot;
+  git push
+
+  因为podspec文件中获取Git版本控制的项目还需要tag号，所以我们要打上一个tag，
+  git tag -m &quot;first release&quot; &quot;0.1.0&quot;
+  git push --tags     #推送tag到远端仓库
+
+4.现在先本地测试一波
+  cd 到项目里的 templates/ios/Example里讲Podfile改成
+      use_frameworks!
+
+      target &apos;PROJECT_Example&apos; do
+        pod &apos;PodTestLibrary&apos;, :path =&gt; &apos;/Users/chenzhangquan/Desktop/ZQPodSpecs/podTestLibrary&apos;
+
+        target &apos;PROJECT_Tests&apos; do
+          inherit! :search_paths
+        end
+      end
+
+
+  /Users/chenzhangquan/Desktop/ZQPodSpecs/podTestLibrary是工程的绝对路径，修改完成后pod install一下就成功本地集成了。
+  打开项目工程，可以看到库文件都被加载到Pods子项目中了，不过它们并没有在Pods目录下，而是跟测试项目一样存在于Development Pods/PodTestLibrary中，这是因为我们是在本地测试，而没有把podspec文件添加到Spec Repo中的缘故。
+  到现在位置你会发现你的 ~/.cocoapods/repos/WTSpecs文件下啥都没有（有也应该只有一个README.md）接下来就要往这个文件夹里加东西。
+5.向Spec Repo提交podspec
+  cd到项目路径下。
+  pod repo push WTSpecs PodTestLibrary.podspec  #前面是本地Repo名字 后面是podspec名字
+  完成之后你会发现~/.cocoapods/repos/WTSpecs目录下多了个PodTestLibrary文件夹，这就说明push成功了
+  ├── PodTestLibrary
+  └── 0.1.0
+         └── PodTestLibrary.podspec
+  这时候你会发现，pod还会自动帮你把这个文件同步到https://git.oschina.net/luckily7/WTSpecs.git
+
+6.现在进行远程测试一波
+  cd 到项目里的 templates/ios/Example里讲Podfile改成
+      use_frameworks!
+      source &apos;https://git.oschina.net/luckily7/WTSpecs.git&apos; #这里要写Spec Repo在git上的地址才可以
+      target &apos;PROJECT_Example&apos; do
+        # pod &apos;${POD_NAME}&apos;, :path =&gt; &apos;../&apos;
+        # pod &apos;PodTestLibrary&apos;, :path =&gt; &apos;/Users/chenzhangquan/Desktop/ZQPodSpecs/podTestLibrary&apos;
+        pod &apos;PodTestLibrary&apos;,&quot;0.1.0&quot;
+        target &apos;PROJECT_Tests&apos; do
+          inherit! :search_paths
+
+          # ${INCLUDED_PODS}
+        end
+      end
+  然后你这时候也pod install成功了
+</code></pre></div></article></div></main><footer><div class="paginator"><a href="/2017/08/30/给你的mongodb砌墙/" class="prev">PREV</a><a href="/2017/07/19/从零开始搭建blog/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

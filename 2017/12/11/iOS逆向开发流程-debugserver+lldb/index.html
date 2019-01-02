@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> iOS逆向开发流程-debugserver+lldb · SillyGe's blog</title><meta name="description" content="iOS逆向开发流程-debugserver+lldb - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">iOS逆向开发流程-debugserver+lldb</h1><div class="post-info">Dec 11, 2017</div><div class="post-content"><p>一步一步用debugserver + lldb代替gdb进行动态调试</p>
+<h2 id="1-下载ldid"><a href="#1-下载ldid" class="headerlink" title="1.下载ldid"></a>1.下载ldid</h2><p>在mac上下载ldid 执行brew install ldid</p>
+<h2 id="2-从iPad-iPhone上获取debugserver"><a href="#2-从iPad-iPhone上获取debugserver" class="headerlink" title="2.从iPad/iPhone上获取debugserver"></a>2.从iPad/iPhone上获取debugserver</h2><p>scp root@192.168.2.204:/Developer/usr/bin/debugserver /Users/chenzhangquan/Desktop/iOS逆向开发/debugserver</p>
+<h2 id="3-对debugserver进行瘦身"><a href="#3-对debugserver进行瘦身" class="headerlink" title="3.对debugserver进行瘦身"></a>3.对debugserver进行瘦身</h2><p>cd到debugserver目录下 执行lipo -thin arm64 debugserver -output debugserver</p>
+<p>注意不同型号说记对应的内核4（armv7），4s（armv7），5（armv7），5s，iPad air（arm64），6（arm64），6s（arm64）</p>
+<h2 id="4-给debugserver添加task-for-pid权限"><a href="#4-给debugserver添加task-for-pid权限" class="headerlink" title="4.给debugserver添加task_for_pid权限"></a>4.给debugserver添加task_for_pid权限</h2><p>1.给debugserver添加task_for_pid权限后，我们就可以使用LLDB调试其他App了。此部分我们需要一个存储配置信息的xml文件，该文件的内容如下。你可以将下下方的文本进行拷贝，然后存储成ent.xml即可。ent.xml储存在debugserver同目录下</p>
+<blockquote>
+<p>&lt;!DOCTYPE plist PUBLIC “-//Apple//DTD PLIST 1.0//EN” “<a href="http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;" target="_blank" rel="external">http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;</a><br>  &lt;plist version=”1.0”&gt;<br>  &lt;dict&gt;<br>          &lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;get-task-allow&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;task_for_pid-allow&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;run-unsigned-code&lt;/key&gt;<br>          &lt;true/&gt;<br>  &lt;/dict&gt;<br>  &lt;/plist&gt;</p>
+</blockquote>
+<p>2.cd到debugserver目录下 执行ldid -Sent.xml debugserver</p>
+<p>3.将debugserver拷贝到iOS设备中<br>cd到debugserver目录下 执行scp debugserver root@192.168.2.204:/usr/bin/debugserver</p>
+<p>4.将可执行的权限赋给debugserver<br>将debugserver拷贝到/usr/bin目录下后，执行下方的赋权限的命令，将可执行的权限赋给debugserver，如下所示：<br>cd到/usr/bin 执行chmod +x debugserver</p>
+<p>5.赋完权限后，你就可以使用debugserver命令来开启debuserver了，如下所示：</p>
+<blockquote>
+<p>chenzhangquande-iPad:/usr/bin root# debugserver<br>debugserver-310.2 for arm64.<br>Usage:<br>  debugserver host:port [program-name program-arg1 program-arg2 …]<br>  debugserver /path/file [program-name program-arg1 program-arg2 …]<br>  debugserver host:port –attach=<pid><br>  debugserver /path/file –attach=<pid><br>  debugserver host:port –attach=<process_name><br>  debugserver /path/file –attach=<process_name></process_name></process_name></pid></pid></p>
+</blockquote>
+<h2 id="5-debugserver的开启与LLDB的连接"><a href="#5-debugserver的开启与LLDB的连接" class="headerlink" title="5.debugserver的开启与LLDB的连接"></a>5.debugserver的开启与LLDB的连接</h2><p>在iPad端:<br>运行目标app后,执行debugserver *:12345 -a “Wsloan_40”</p>
+<blockquote>
+<p>chenzhangquande-iPad:/usr/bin root# debugserver <em>:12345 -a “Wsloan_40”<br>debugserver-310.2 for arm64.<br>Attaching to process Wsloan_40…<br>Listening to port 12345 for a connection from </em>…<br>Waiting for debugger instructions for process 0.</p>
+</blockquote>
+<p>在我们iOS设备上执行上述命令的效果如下所示，执行完上述命令后，我们的iOS设备就会等待Mac终端LLDB的接入。</p>
+<p>在Mac端口:<br>启动lldb后，执行process connect connect://127.0.0.1:12345<br>LLDB与debugserver建立完成后，我们就可以使用lldb来调试微信这个应用了</p>
+<blockquote>
+<p>chenzhauandeMBP:iPad air chenzhangquan$ lldb<br>(lldb) process connect connect://192.168.2.204:12345<br>Process 471 stopped</p>
+<ul>
+<li>thread #1: tid = 0x165e, 0x00000001917a5ca0 libsystem_kernel.dylib<code>mach_msg_trap + 8, queue = &#39;com.apple.main-thread&#39;, stop reason = signal SIGSTOP
+  frame #0: 0x00000001917a5ca0 libsystem_kernel.dylib</code>mach_msg_trap + 8<br>libsystem_kernel.dylib<code>mach_msg_trap:
+-&gt;  0x1917a5ca0 &lt;+8&gt;: ret    
+libsystem_kernel.dylib</code>mach_msg_overwrite_trap:<br>  0x1917a5ca4 &lt;+0&gt;: movn   x16, #0x1f<br>  0x1917a5ca8 &lt;+4&gt;: svc    #0x80<br>  0x1917a5cac &lt;+8&gt;: ret    </li>
+</ul>
+</blockquote>
+<p>接下来便可以跟在xcode里一样  调试app了。</p>
+<blockquote>
+<p>(lldb) c    //continue，app继续运行<br>Process 471 resuming<br>(lldb)po [MD5Utils _shortMethodDescription]<br>&lt;MD5Utils: 0x1012e3850&gt;:<br>in MD5Utils:<br>    Class Methods:</p>
+<ul>
+<li>(id) MD5Parameter:(id)arg1; (0x1004d78b8)<ul>
+<li>(id) MD5:(id)arg1; (0x1004d76d0)</li>
+<li>(id) MD5String:(id)arg1; (0x1004d77fc)<br>Instance Methods:</li>
+</ul>
+<ul>
+<li>(id) MD5String:(id)arg1; (0x1004d7cc8)<br>(NSObject …)</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<p>得到函数地址。</p>
+<p>b 0x1004d78b8 //这样就可以在MD5Parameter方法上打断点了。</p>
+<p>lldb语法:<br><a href="http://lldb.llvm.org/lldb-gdb.html" target="_blank" rel="external">http://lldb.llvm.org/lldb-gdb.html</a><br>lldb使用:<br><a href="http://bbs.iosre.com/t/debugserver-lldb-gdb/65" target="_blank" rel="external">http://bbs.iosre.com/t/debugserver-lldb-gdb/65</a><br><a href="https://www.cnblogs.com/ludashi/p/5730338.html" target="_blank" rel="external">https://www.cnblogs.com/ludashi/p/5730338.html</a></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/12/14/iOS逆向开发流程-越狱机环境搭建流程/" class="prev">PREV</a><a href="/2017/12/08/iOS逆向开发流程-cycript运行时分析/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 解决OC发送消息无法传递和返回基本数据类型的问题 · SillyGe's blog</title><meta name="description" content="解决OC发送消息无法传递和返回基本数据类型的问题 - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">解决OC发送消息无法传递和返回基本数据类型的问题</h1><div class="post-info">Jul 18, 2017</div><div class="post-content"><p>OC通过objc_msgSend()或者performSelector:发送消息是非常常见的，但是若传递和返回的是<strong>基本数据</strong>类型，会出现以下问题:</p>
+<h4 id="传递参数时"><a href="#传递参数时" class="headerlink" title="传递参数时"></a>传递参数时</h4><blockquote>
+<p>用objc_msgSend() 没问题，可以正常传送对象和基本数据类型<br>用performSelector: 传递基本数据类型会出问题，即便包装成类，方法也不能调用成功。</p>
+</blockquote>
+<h4 id="方法有返回参数时"><a href="#方法有返回参数时" class="headerlink" title="方法有返回参数时"></a>方法有返回参数时</h4><blockquote>
+<p>用objc_msgSend() 不可以正常调用，程序崩溃<br>用performSelector: 返回的是self，不是想要的数据类型。失败。</p>
+</blockquote>
+<h3 id="综上所述，解决办法如下"><a href="#综上所述，解决办法如下" class="headerlink" title="综上所述，解决办法如下:"></a>综上所述，解决办法如下:</h3><h4 id="传递参数时-1"><a href="#传递参数时-1" class="headerlink" title="传递参数时"></a>传递参数时</h4><p>发送消息最好用objc_msgSend()</p>
+<h4 id="方法有返回参数时-1"><a href="#方法有返回参数时-1" class="headerlink" title="方法有返回参数时"></a>方法有返回参数时</h4><pre><code>NSMethodSignature *signature = [obj methodSignatureForSelector:getClawNum];
+动态获得该类对象方法的NSMethodSignature类。其中封装着方法的信息，如：传入参数类型和返回参数类型
+for (NSInteger i = 0;i &lt; [signature numberOfArguments] ; i++ ){
+   const char *type = [signature getArgumentTypeAtIndex:i];
+   NSLog(@&quot;%s&quot;,type);
+}
+NSString *type = [NSString stringWithCString:[signature methodReturnType] encoding:NSUTF8StringEncoding];
+若[type isEqualToString:@&quot;@&quot;]成立，那说明返回参数类型是对象，用那种方式发送都可以。
+若不成立，则说明返回参数类型是基础数据类型，当然还有其他数据类型比如block之类的，在此不讨论
+
+
+NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
+再创建NSInvocation类。是一个方法调用类
+        invocation.target = obj;
+        invocation.selector = getClawNum;
+        [invocation invoke];
+        CGFloat rtnVal = 0;
+        [invocation getReturnValue:&amp;rtnVal];
+这样就可以将返回值放到rtnVal中了。
+</code></pre><hr>
+<p>在解决这个问题的时候还学习到了消息转发机制</p>
+<p>当调用对象方法找不到方法的时候，系统会调用一下方法<br><code>- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector</code><br>再调用<br><code>- (void)forwardInvocation:(NSInvocation *)anInvocation</code><br>如果没有方法,而且在第一个方法里返回nil，那么系统会crash<br>但是如果在第一个方法里返回有值，比如自己其他方法的活着其他类的<code>NSMethodSignature</code>，那么系统会继续调用<code>forwardInvocation</code>方法，<code>anInvocation</code>里有<code>[anInvocation selector]</code>方法。</p>
+<h4 id="参考的blog："><a href="#参考的blog：" class="headerlink" title="参考的blog："></a>参考的blog：</h4><p><a href="http://www.jianshu.com/p/6356b04f499f" target="_blank" rel="external">尝试手写一个更好用的performSelector/msgSend</a><br><a href="http://www.cocoachina.com/bbs/read.php?tid=105116" target="_blank" rel="external">关于performselector的返回值</a><br><a href="http://blog.csdn.net/dean19900504/article/details/8737862" target="_blank" rel="external">NSMethodSignature和NSInvocation的用法</a><br><a href="http://blog.csdn.net/haishu_zheng/article/details/12873151" target="_blank" rel="external">Objective-C中的@dynamic</a></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/07/19/从零开始搭建blog/" class="prev">PREV</a><a href="/2017/07/18/关于xib和autolayout适配cell(一)/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

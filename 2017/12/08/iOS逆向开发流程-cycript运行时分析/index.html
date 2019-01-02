@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> iOS逆向开发流程-cycript运行时分析 · SillyGe's blog</title><meta name="description" content="iOS逆向开发流程-cycript运行时分析 - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">iOS逆向开发流程-cycript运行时分析</h1><div class="post-info">Dec 8, 2017</div><div class="post-content"><h2 id="使用cycript挂载目标APP"><a href="#使用cycript挂载目标APP" class="headerlink" title="使用cycript挂载目标APP"></a>使用cycript挂载目标APP</h2><p>1.运行app，这里我的app名字叫Wsloan_40<br>2.使用ps aux -c|grep 指令搜索app的进程id</p>
+<blockquote>
+<p>chenzhangquande-iPad:~ root# ps aux -c|grep Wsloan_40<br>mobile   11683   2.5  7.1   767000  71144   ??  Ss    9:30AM   0:06.18 Wsloan_40</p>
+</blockquote>
+<p>  此处发现当前运行的app的进程id为11683</p>
+<p>3.使用cycript挂钩目标app</p>
+<blockquote>
+<p>iPhone4:~ root# cycript -p 11683<br>  cy#</p>
+</blockquote>
+<p>  至此cycript便已挂载成功。</p>
+<h2 id="cycript的简单使用"><a href="#cycript的简单使用" class="headerlink" title="cycript的简单使用"></a>cycript的简单使用</h2><p>1.使用cycript打印当前app的appdelegate</p>
+<blockquote>
+<p>cy# UIApp.delegate</p>
+<p>#”&lt;AppDelegate: 0x1555ff90&gt;”</p>
+</blockquote>
+<p>2.使用cycript打印当前app的keyWindow</p>
+<blockquote>
+<p>cy# UIApp.keyWindow</p>
+<p>#”&lt;UIWindow: 0x15563a10; frame = (0 0; 320 480); gestureRecognizers = &lt;NSArray: 0x15594140&gt;; layer = &lt;UIWindowLayer: 0x15594230&gt;&gt;”</p>
+</blockquote>
+<p>3.使用cycript打印当前app的首页的控制器</p>
+<blockquote>
+<p>cy# UIApp.keyWindow.rootViewController.viewControllers[0].visibleViewController</p>
+<p>  #”&lt;ZQTabbar1Controller: 0x12d68fad0&gt;”</p>
+</blockquote>
+<p>4.使用cycript打印当前app的首页的控制器内的属性.如title</p>
+<blockquote>
+<p>cy# var vc = new Instance(0x12d68fad0)</p>
+<p>  #”&lt;ZQTabbar1Controller: 0x12d68fad0&gt;”<br>  cy# vc.title<br>  @”Tab1Main”<br>  cy# vc.title = “aa”<br>  “aa”</p>
+</blockquote>
+<p>  你可以动态的看到你首页的tabbar的标题被修改成了“aa”了。</p>
+<h2 id="使用cycript-hook对象方法"><a href="#使用cycript-hook对象方法" class="headerlink" title="使用cycript hook对象方法"></a>使用cycript hook对象方法</h2><h5 id="无参数的时候"><a href="#无参数的时候" class="headerlink" title="无参数的时候"></a>无参数的时候</h5><p>这里我hook了目标app的一个按钮点击事件“customServceIconClick”</p>
+<blockquote>
+<p>cy# var orig_customServiceIconClick = ZQTabbar1Controller.prototype[‘customServceIconClick’]<br>  (extern “C” void “:customServiceIconClick”(id, SEL))<br>  cy# ZQTabbar1Controller.prototype[‘customServiceIconClick’] = function (){<br>      orig_customServiceIconClick.call(this);<br>      vc.title = “bb”;<br>    }<br>  function () {var e;e=this;orig_customServiceIconClick.call(e);vc.title=”bb”;}</p>
+</blockquote>
+<p>在按钮点的时候，我把首页的标题改成了“bb”</p>
+<h5 id="有参数的时候"><a href="#有参数的时候" class="headerlink" title="有参数的时候"></a>有参数的时候</h5><p>这里我hook了目标app的一个刷新UI的方法，此处传递了个字典，我想拦截并打印出看看。</p>
+<blockquote>
+<p>cy# var a = @{}<br>  @{}<br>  cy# var orig_reloadViewWithDict = ZQTabbar1Controller.prototype[‘reloadViewWithict:’]<br>  (extern “C” void “:reloadViewWithDict:”(id, SEL, id))<br>  cy# ZQTabbar1Controller.prototype[‘reloadViewWithDict:’] = function (arg1){<br>      orig_reloadViewWithDict.call(this,arg1);<br>        a = arg1<br>        }<br>  function (t) {var e;e=this;orig_reloadViewWithDict.call(e,t);a=t;}</p>
+</blockquote>
+<p>在下啦刷新完之后，我去打印a，就能打印出字典里的数据</p>
+<blockquote>
+<p>cy# a<br>  @{“message”:””,”content”:@{}}</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>  可以运行时打印出控制器的任何属性。<br>  可以运行时修改属性。<br>  可以运行时hook方法。</p>
+<p>  cycript的使用流程参照了:<a href="http://www.blogfshare.com/ioss-cycript.html" target="_blank" rel="external">http://www.blogfshare.com/ioss-cycript.html</a><br>  cycript的语法可以参考 <a href="http://iphonedevwiki.net/index.php/Cycript_Tricks#Replacing_existing_Objective-C_methods" target="_blank" rel="external">http://iphonedevwiki.net/index.php/Cycript_Tricks#Replacing_existing_Objective-C_methods</a></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/12/11/iOS逆向开发流程-debugserver+lldb/" class="prev">PREV</a><a href="/2017/12/08/iOS逆向开发流程-gdb调试/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

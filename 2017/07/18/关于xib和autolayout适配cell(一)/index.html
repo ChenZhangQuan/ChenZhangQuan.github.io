@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 关于xib，autolayout适配cell（一） · SillyGe's blog</title><meta name="description" content="关于xib，autolayout适配cell（一） - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">关于xib，autolayout适配cell（一）</h1><div class="post-info">Jul 18, 2017</div><div class="post-content"><blockquote>
+<p>xib里autolayout在 在iOS7与iOS8里对cell进行动态排版的有挺多的细节需要注意</p>
+</blockquote>
+<h2 id="在iOS8以及之后，系统做了优化"><a href="#在iOS8以及之后，系统做了优化" class="headerlink" title="在iOS8以及之后，系统做了优化"></a>在iOS8以及之后，系统做了优化</h2><p>iOS8可以动态更改约束，可以改变约束的长度以及优先值；而iOS7里支持的不太好，很多更改的操作可能会导致直接crash</p>
+<p>其次，iOS8里如果将cell的最下面一个空间跟cell的底部加一条约束，系统会自己帮你算出cell的高度，而不需要去实现tableView<br>heightForRow代理方法来返回cell高度；而iOS7里如果你不实现tableView heightForRow代理方法系统也会直接crash掉，而且系统也不会帮你计算的。解决办法：</p>
+<blockquote>
+<p>1.在iOS7里尽量稍作更改约束优先级的操作</p>
+<p>2.在返回cell高度的方法里分类讨论<br>在iOS7里cell的高度计算方式可以通过新建cell，来得到cell的最下面那个控件的frame<br>在iOS8里cell的高度通过计算像iOS7中一样，也可以通过压迫cell，让系统帮助计算。</p>
+</blockquote>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><p>iOS7里不能给tableView addsubview。</p>
+<p>关于tableHeaderView高度不固定的情况应做如下操作：</p>
+<blockquote>
+<p>1.首先headview必须给一个frame</p>
+<p>2.然后将子空间在headview中布局</p>
+<p>3.layoutifneed</p>
+<p>4.让headview的height根据布局后的最后一个控件来设置</p>
+<p>5.tableview.headview= headview</p>
+</blockquote>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/07/18/oc解决发送消息无法传递和返回基本数据类型的问题/" class="prev">PREV</a><a href="/2017/07/17/iOS统计xcode代码行数/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

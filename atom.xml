@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>SillyGe&#39;s blog</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2019-01-02T02:20:06.855Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>SillyGe</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>iOS进攻与防御总结</title>
+    <link href="http://yoursite.com/2018/12/29/iOS%E8%BF%9B%E6%94%BB%E4%B8%8E%E9%98%B2%E5%BE%A1%E6%80%BB%E7%BB%93/"/>
+    <id>http://yoursite.com/2018/12/29/iOS进攻与防御总结/</id>
+    <published>2018-12-29T05:21:49.715Z</published>
+    <updated>2019-01-02T02:20:06.855Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="防守。"><a href="#防守。" class="headerlink" title="防守。"></a>防守。</h2><h3 id="1-重签名防护"><a href="#1-重签名防护" class="headerlink" title="1.重签名防护"></a>1.重签名防护</h3><h4 id="思路-比较工程目录下-embedded-mobileprovision-文件中的application-identifier的bundle进行比对。"><a href="#思路-比较工程目录下-embedded-mobileprovision-文件中的application-identifier的bundle进行比对。" class="headerlink" title="思路:比较工程目录下 embedded.mobileprovision 文件中的application-identifier的bundle进行比对。"></a>思路:比较工程目录下 embedded.mobileprovision 文件中的application-identifier的bundle进行比对。</h4><h5 id="破解方式"><a href="#破解方式" class="headerlink" title="破解方式"></a>破解方式</h5><p>hook重签名防护代码</p><h3 id="2-反调试"><a href="#2-反调试" class="headerlink" title="2.反调试"></a>2.反调试</h3><h4 id="思路-通过ptrace反调试。"><a href="#思路-通过ptrace反调试。" class="headerlink" title="思路:通过ptrace反调试。"></a>思路:通过ptrace反调试。</h4><h5 id="实现方式"><a href="#实现方式" class="headerlink" title="实现方式:"></a>实现方式:</h5><p>复制macOS下的头文件，再调用</p><blockquote><pre><code>ptrace(PT_DENY_ATTACH,0,0,0);</code></pre><h5 id="破解方式-1"><a href="#破解方式-1" class="headerlink" title="破解方式"></a>破解方式</h5><p>hook系统的ptrace代码</p><h5 id="防护升级"><a href="#防护升级" class="headerlink" title="防护升级"></a>防护升级</h5><p>通过framework提前ptrace执行时序，你就直接闪退了，无法fishHook系统函数</p><h5 id="破解升级"><a href="#破解升级" class="headerlink" title="破解升级"></a>破解升级</h5><p>通过下符号断点去查找ptrace，或者exit的汇编代码，修改ptrace汇编代码逻辑，破坏反调试。（跟反反hook一样，通过修改汇编代码破坏ptrace或者exit的调用代码）</p><h5 id="防护继续升级"><a href="#防护继续升级" class="headerlink" title="防护继续升级"></a>防护继续升级</h5><p>通过svc让你找不到ptrace和exit。</p></blockquote><h3 id="3-反hook"><a href="#3-反hook" class="headerlink" title="3.反hook"></a>3.反hook</h3><h4 id="思路-通过framework提前fishhook反hook代码"><a href="#思路-通过framework提前fishhook反hook代码" class="headerlink" title="思路:通过framework提前fishhook反hook代码"></a>思路:通过framework提前fishhook反hook代码</h4><h5 id="破解方式-2"><a href="#破解方式-2" class="headerlink" title="破解方式"></a>破解方式</h5><p>通过下符号断点去查找method_setImplimentation,通过汇编破坏反hook函数。</p><h3 id="4-反注入"><a href="#4-反注入" class="headerlink" title="4.反注入"></a>4.反注入</h3><h4 id="思路-修改DYLD-INSERT-LIBRARIES来防止动态注入"><a href="#思路-修改DYLD-INSERT-LIBRARIES来防止动态注入" class="headerlink" title="思路:修改DYLD_INSERT_LIBRARIES来防止动态注入"></a>思路:修改DYLD_INSERT_LIBRARIES来防止动态注入</h4><h5 id="实现方式-1"><a href="#实现方式-1" class="headerlink" title="实现方式:"></a>实现方式:</h5><p>  在工程中的build setting里的 other linker flag字段为</p><blockquote><p>  -Wl,-sectcreate,<strong>RESTRICT,</strong>restrict,/dev/null</p><h5 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h5><p>可以防止动态注入tweak生成的动态库插件，可以防止动态砸壳</p><h6 id="ps-在模拟器会造成无法调试的问题。dyld-dyld-sim-cannot-be-loaded-in-a-restricted-process"><a href="#ps-在模拟器会造成无法调试的问题。dyld-dyld-sim-cannot-be-loaded-in-a-restricted-process" class="headerlink" title="ps:在模拟器会造成无法调试的问题。dyld: dyld_sim cannot be loaded in a restricted process"></a>ps:在模拟器会造成无法调试的问题。dyld: dyld_sim cannot be loaded in a restricted process</h6></blockquote><h5 id="破解方式-3"><a href="#破解方式-3" class="headerlink" title="破解方式"></a>破解方式</h5><p>通过修改二进制文件去更改restrict字段。</p><h5 id="防护升级-1"><a href="#防护升级-1" class="headerlink" title="防护升级"></a>防护升级</h5><p>通过代码查看dyld源码查看restrict字段是否被改变</p><h5 id="黑客最终手段"><a href="#黑客最终手段" class="headerlink" title="黑客最终手段"></a>黑客最终手段</h5><p>hook升级防护代码</p><h2 id="简便的代码防护手段。"><a href="#简便的代码防护手段。" class="headerlink" title="简便的代码防护手段。"></a>简便的代码防护手段。</h2><p>1.使用宏定义进行代码混淆<br>2.对核字符串key进行c函数异或隐藏。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;防守。&quot;&gt;&lt;a href=&quot;#防守。&quot; class=&quot;headerlink&quot; title=&quot;防守。&quot;&gt;&lt;/a&gt;防守。&lt;/h2&gt;&lt;h3 id=&quot;1-重签名防护&quot;&gt;&lt;a href=&quot;#1-重签名防护&quot; class=&quot;headerlink&quot; title=&quot;1.重签名防护
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-砸壳-Clutch</title>
+    <link href="http://yoursite.com/2018/12/27/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-%E7%A0%B8%E5%A3%B3-Clutch/"/>
+    <id>http://yoursite.com/2018/12/27/iOS逆向开发流程-砸壳-Clutch/</id>
+    <published>2018-12-27T01:08:02.354Z</published>
+    <updated>2018-12-27T01:42:15.570Z</updated>
+    
+    <content type="html"><![CDATA[<h5 id="1-去https-github-com-KJCracks-Clutch-releases-下载clutch"><a href="#1-去https-github-com-KJCracks-Clutch-releases-下载clutch" class="headerlink" title="1. 去https://github.com/KJCracks/Clutch/releases 下载clutch"></a>1. 去<a href="https://github.com/KJCracks/Clutch/releases" target="_blank" rel="external">https://github.com/KJCracks/Clutch/releases</a> 下载clutch</h5><h5 id="2-拷贝Clutch文件拷贝的iPhone的-usr-bin-目录下"><a href="#2-拷贝Clutch文件拷贝的iPhone的-usr-bin-目录下" class="headerlink" title="2. 拷贝Clutch文件拷贝的iPhone的/usr/bin/目录下"></a>2. 拷贝Clutch文件拷贝的iPhone的/usr/bin/目录下</h5><blockquote><pre><code>scp -P 12345 Clutch root@127.0.0.1:/usr/bin/</code></pre></blockquote><p>注意:</p><blockquote><p>1.下载的Clutch命令行工具文件的名字可能是Clutch-x.x.x. 需要改名为Clutch</p><p>2.Clutch需要可执行权限</p><pre><code>iPhone:~ root# chmod +x /usr/bin/Clutch// 查看说明iPhone:~ root# ClutchUsage: Clutch [OPTIONS]-b --binary-dump &lt;value&gt; Only dump binary files from &gt;specified bundleID-d --dump &lt;value&gt;        Dump specified bundleID &gt;     into .ipa file-i --print-installed     Print installed applications--clean               Clean /var/tmp/clutch directory--version             Display version and exit-? --help                Display this help and exit-n --no-color            Print with colors disabled</code></pre><p>3.目前, Clutch在iOS11的非完美越狱是不好使的</p></blockquote><h5 id="3-查看可砸壳的应用"><a href="#3-查看可砸壳的应用" class="headerlink" title="3. 查看可砸壳的应用"></a>3. 查看可砸壳的应用</h5><blockquote><pre><code>iPhone:~ root# Clutch -iInstalled apps:1:   追书神器-全网更新最快的小说阅读器 &lt;com.ifmoc.ZhuiShuShenQi&gt;2:   网易云音乐-音乐的力量 &lt;com.netease.cloudmusic&gt;3:   微信 &lt;com.tencent.xin&gt;</code></pre></blockquote><h5 id="4-砸壳应用"><a href="#4-砸壳应用" class="headerlink" title="4. 砸壳应用"></a>4. 砸壳应用</h5><blockquote><pre><code>iPhone:~ root# Clutch -d com.ifmoc.ZhuiShuShenQi</code></pre></blockquote><p>// 或者使用标号</p><blockquote><pre><code>iPhone:~ root# Clutch -d 1</code></pre></blockquote><p>砸壳结束后结果如下:</p><blockquote><pre><code>ASLR slide: 0x100060000Dumping &lt;YouShaQi&gt; (arm64)Patched cryptid (64bit segment)Writing new checksumDONE: /private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipaFinished dumping com.ifmoc.ZhuiShuShenQi in 26.7 seconds</code></pre></blockquote><p>其中/private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipa为已经砸壳的ipa包</p><p>将IPA文件拷贝到电脑(在电脑端运行此命令)</p><blockquote><pre><code>scp -P 12345 root@127.0.0.1:/private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipa ~/Desktop</code></pre></blockquote><h5 id="5-验证是否砸壳成功"><a href="#5-验证是否砸壳成功" class="headerlink" title="5. 验证是否砸壳成功"></a>5. 验证是否砸壳成功</h5><p>解压桌面的IPA文件, 找到里面的Mach-O(YouShaQi)文件, 执行如下命令:</p><blockquote><pre><code>otool -l YouShaQi | grep cryptcryptoff 16384cryptsize 15990784cryptid 0</code></pre></blockquote><p>此时 cryptid 为 0, 即没有任何加密. 砸壳成功!!!</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h5 id=&quot;1-去https-github-com-KJCracks-Clutch-releases-下载clutch&quot;&gt;&lt;a href=&quot;#1-去https-github-com-KJCracks-Clutch-releases-下载clutch&quot; class=&quot;heade
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>及时聊天从零开始-01</title>
+    <link href="http://yoursite.com/2018/06/21/%E5%8F%8A%E6%97%B6%E8%81%8A%E5%A4%A9%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B-01/"/>
+    <id>http://yoursite.com/2018/06/21/及时聊天从零开始-01/</id>
+    <published>2018-06-21T08:49:41.000Z</published>
+    <updated>2018-06-26T06:27:25.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>1.IM协议及服务器选型<br><a href="https://blog.csdn.net/wang631106979/article/details/52557265" target="_blank" rel="external">https://blog.csdn.net/wang631106979/article/details/52557265</a></p><p>协议选型：XMPP已经成为标准的IM协议<br>我们主要实践iOS端流程，不考虑太多服务器实现，因为Openfire易安装，插件功能丰富，我们使用Openfire。</p><p>##在mac上搭建聊天服务器。<br>1.MAC上搭建MySQL，这里有个大坑，下了最新的mysql8.0.11，下了最新的openfire4.2.3。发现在openfire链接数据库的时候一只报错。<br>A connection to the database could not be made. View the error message by opening the “/logs/error.log” log file, then go back to fix the problem.<br>链接语句改了好多版本，试了半天都没试出问题所在。<br>然后偶然间去链接了一下同事的远程数据库，发现没问题。就猜测openfire没问题，可能是mysql版本的问题。然后就降了个版本就ojbk了。</p><p>##<br><a href="https://github.com/ChatSecure/ChatSecure-iOS" target="_blank" rel="external">https://github.com/ChatSecure/ChatSecure-iOS</a><br>工程初始化遇到的问题<br>1.git submodule update –init –recursive 无法下载报错Error: Permission denied (publickey)<br>解决办法：<br><a href="https://www.cnblogs.com/amaoxiaozhu/p/3319233.html" target="_blank" rel="external">https://www.cnblogs.com/amaoxiaozhu/p/3319233.html</a></p><p>2.需要使用到carthage<br>使用教程：<a href="http://blog.gezhiqiang.com/2017/03/08/git-submodule/" target="_blank" rel="external">http://blog.gezhiqiang.com/2017/03/08/git-submodule/</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;1.IM协议及服务器选型&lt;br&gt;&lt;a href=&quot;https://blog.csdn.net/wang631106979/article/details/52557265&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://blog.csdn.n
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-Openshh笔记</title>
+    <link href="http://yoursite.com/2018/05/30/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-Openshh%E7%AC%94%E8%AE%B0/"/>
+    <id>http://yoursite.com/2018/05/30/iOS逆向开发流程-Openshh笔记/</id>
+    <published>2018-05-30T15:31:04.000Z</published>
+    <updated>2018-12-25T05:34:42.480Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="越狱开发笔记"><a href="#越狱开发笔记" class="headerlink" title="越狱开发笔记"></a>越狱开发笔记</h1><p>###必备插件<br><img src="media/15170403463820/15276941463691.jpg" alt=""></p><p>安装openSSH插件<br><img src="media/15170403463820/15276941121668.jpg" alt=""></p><p>###通过openSSH连接(登录)手机</p><p>$ssh 用户名@用户服务器地址</p><p>删除SSH服务器对应的公钥<br>$ssh-keygen -R 服务器IP地址</p><p><strong>iOS 下有两个用户</strong></p><ul><li>root 最高权限的用户 $HOME:/var/root</li><li>还有一个 mobile $HOME: /var/mobile</li></ul><p>###修改ssh登录密码</p><ul><li>passwd 输入两次新密码</li></ul><p>###SSH<br>SSH是一种网络协议.用于计算机之间的加密登录!</p><p>###openSSH<br>openSSH其中一种软件.</p><p>SSH通讯过程<br><img src="media/15170403463820/15276941954914.jpg" alt=""></p><p>###中间人攻击(Man-in-the-MiddleAttack，简称“MITM攻击”)<br>预防中间人攻击最有效的方法就是验证 公钥是不是服务器的!!<br>如果是公开的SSH服务器,一般会将公钥的哈希值 公布在网站上!!</p><p>###SSH使用公钥登录<br>除了使用密码登录,也可以免密码登录!<br>所谓的”公钥登录”,原理:<br>    1.Mac电脑将自己的公钥发给远程的手机<br>    2.手机随机的生成一段字符串,发给Mac电脑.<br>    3.Mac利用私钥加密字符串!<br>    4.手机利用公钥解密字符串!<br>    如果还要输入密码的话,设置文件的权限! chmod 755</p><p>###USB<br>SSH的默认端口是22<br>usbmuxd    在iOS和Mac上都是自带的!</p><h2 id="指令细节"><a href="#指令细节" class="headerlink" title="###指令细节"></a>###指令细节</h2><p>生成公钥私钥对</p><h2 id="ssh-keygen"><a href="#ssh-keygen" class="headerlink" title="ssh-keygen"></a>ssh-keygen</h2><p>rsa 电脑目录 用户 ./ssh<br>查看保存的手机端公钥 cat known_hosts</p><p>rsa 手机目录 iPhone:/etc/ssh</p><h2 id="查看手机端公钥-cat-ssh-host-rsa-key-pub"><a href="#查看手机端公钥-cat-ssh-host-rsa-key-pub" class="headerlink" title="查看手机端公钥 cat ssh_host_rsa_key.pub"></a>查看手机端公钥 cat ssh_host_rsa_key.pub</h2><p>免密登录</p><h2 id="复制mac公钥到手机ssh-copy-id-root-192-168-2-152"><a href="#复制mac公钥到手机ssh-copy-id-root-192-168-2-152" class="headerlink" title="复制mac公钥到手机ssh-copy-id root@192.168.2.152"></a>复制mac公钥到手机ssh-copy-id root@192.168.2.152</h2><p>使用usb登录<br>1.使用脚本监听mac的12345端口<br>python /Users/chenzhangquan/ZQShell/python-client/tcprelay.py -t 22:12345<br>2.再通过shh访问mac12345端口</p><h2 id="ssh-p-12345-root-127-0-0-1"><a href="#ssh-p-12345-root-127-0-0-1" class="headerlink" title="ssh -p 12345 root@127.0.0.1"></a>ssh -p 12345 root@127.0.0.1</h2><p>复制指令</p><h2 id="scp-P-12345-123-text-root-127-0-0-1"><a href="#scp-P-12345-123-text-root-127-0-0-1" class="headerlink" title="scp -P 12345 123.text root@127.0.0.1:~/"></a>scp -P 12345 123.text root@127.0.0.1:~/</h2><p>应用瘦身<br>lipo wechat -thin arm64 -output wechat_arm64</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;越狱开发笔记&quot;&gt;&lt;a href=&quot;#越狱开发笔记&quot; class=&quot;headerlink&quot; title=&quot;越狱开发笔记&quot;&gt;&lt;/a&gt;越狱开发笔记&lt;/h1&gt;&lt;p&gt;###必备插件&lt;br&gt;&lt;img src=&quot;media/15170403463820/152769414636
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>从零开始安卓笔记01</title>
+    <link href="http://yoursite.com/2018/02/06/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%89%E5%8D%93%E7%AC%94%E8%AE%B001/"/>
+    <id>http://yoursite.com/2018/02/06/从零开始安卓笔记01/</id>
+    <published>2018-02-06T05:26:16.000Z</published>
+    <updated>2018-03-07T08:52:34.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>这是一个随手笔记，记录在学习过程的方式和学习过程中碰到的问题。</p><p>###<br>学习使用的书籍是。《第一行代码+Android+第2版》，直接下了一个pdf，边看边照着做<br>本笔记大概也是记录在学习此书的过程中碰到的问题，以及解决办法。</p><p>##<br>2.4.4 体验活动生命周期</p><p>问题1:点击STARTDIALOGACTIVITY按钮，程序闪退。<br>分析原因:<br>找到最有用的一句话，说明所使用的 theme 和当前 Activity 不匹配：<br>You need to use a Theme.AppCompat theme (or descendant) with this activity.<br>解决办法:<br>AndroidManifest.xml 中 activity 配置如下：</p><activity android:name=".DialogActivity" android:theme="@android:style/Theme.Dialog"><br></activity><br>根据报错提示改为 AppCompat 主题即可：<br><activity android:name=".DialogActivity" android:theme="@style/Theme.AppCompat.Dialog"><br></activity><p>##<br>不小心关闭了Android Device Monitor里的视图<br>Android Studio - Android Device Monitor - Empty View<br><a href="https://stackoverflow.com/questions/24723585/android-studio-android-device-monitor-empty-view#" target="_blank" rel="external">https://stackoverflow.com/questions/24723585/android-studio-android-device-monitor-empty-view#</a></p><p>##<br>本地通知失败</p><p>##<br>8.2通知失败</p><p>##<br>8.1 p291 把app运行到手机上<br>8.2 p293 使用通知<br>8.3</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;这是一个随手笔记，记录在学习过程的方式和学习过程中碰到的问题。&lt;/p&gt;
+&lt;p&gt;###&lt;br&gt;学习使用的书籍是。《第一行代码+Android+第2版》，直接下了一个pdf，边看边照着做&lt;br&gt;本笔记大概也是记录在学习此书的过程中碰到的问题，以及解决办法。&lt;/p&gt;
+&lt;p&gt;##&lt;
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>关于xib，autolayout适配cell（三）</title>
+    <link href="http://yoursite.com/2018/01/25/%E5%85%B3%E4%BA%8Exib%EF%BC%8Cautolayout%E9%80%82%E9%85%8Dcell%EF%BC%88%E4%B8%89%EF%BC%89/"/>
+    <id>http://yoursite.com/2018/01/25/关于xib，autolayout适配cell（三）/</id>
+    <published>2018-01-25T12:03:34.000Z</published>
+    <updated>2018-02-12T13:54:44.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>关于xib，autolayout适配cell的最终章。</p><p>写到这里，我自我感觉已经对cell的布局到了炉火纯青的地步了。<br>就此得出以下几个结论。<br>1.当cell已经展示出来的时候，就不要想着改变cell的高度了，除非tableView重新reload，否则根本改不了。<br>2.为了让cell的高度能根据内容自动适配的操作，需要注意以下几点：<br>  （1）垂直方向上的约束，一开始设定好，就不能变更了。（无论是改xib里拖出来的约束的constant，还是masonry mas_update更新约束高度，都会告警。）如果你的cell这样做了，却不报警，那是因为你的cell未复用。<br>  （2）在垂直方向上的约束固定不变的情况下，通过改变子视图的固有高度来动态决定cell的高度。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;关于xib，autolayout适配cell的最终章。&lt;/p&gt;
+&lt;p&gt;写到这里，我自我感觉已经对cell的布局到了炉火纯青的地步了。&lt;br&gt;就此得出以下几个结论。&lt;br&gt;1.当cell已经展示出来的时候，就不要想着改变cell的高度了，除非tableView重新reload
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>AE相关页面资料</title>
+    <link href="http://yoursite.com/2018/01/22/AE%E7%9B%B8%E5%85%B3%E9%A1%B5%E9%9D%A2%E8%B5%84%E6%96%99/"/>
+    <id>http://yoursite.com/2018/01/22/AE相关页面资料/</id>
+    <published>2018-01-22T00:51:36.000Z</published>
+    <updated>2018-01-22T00:53:05.000Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="https://github.com/bigxixi/bodymovin" target="_blank" rel="external">https://github.com/bigxixi/bodymovin</a> 插件中文文档<br><a href="http://airbnb.io/lottie/ios/dynamic.html" target="_blank" rel="external">http://airbnb.io/lottie/ios/dynamic.html</a> lottie中文跟文档</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;&lt;a href=&quot;https://github.com/bigxixi/bodymovin&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://github.com/bigxixi/bodymovin&lt;/a&gt; 插件中文文档&lt;br&gt;&lt;a href=
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Android入门-环境安装</title>
+    <link href="http://yoursite.com/2018/01/21/Android%E5%85%A5%E9%97%A8-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85/"/>
+    <id>http://yoursite.com/2018/01/21/Android入门-环境安装/</id>
+    <published>2018-01-21T07:09:42.000Z</published>
+    <updated>2018-01-22T11:54:20.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>视频:<a href="http://yun.itheima.com/map/21.html?a5" target="_blank" rel="external">http://yun.itheima.com/map/21.html?a5</a></p><p>安装教程：<br>1.<a href="http://blog.csdn.net/u010291330/article/details/52605672" target="_blank" rel="external">http://blog.csdn.net/u010291330/article/details/52605672</a><br>2.<a href="https://www.jianshu.com/p/d91a2ea3e248" target="_blank" rel="external">https://www.jianshu.com/p/d91a2ea3e248</a></p><p>下载android studio:<a href="http://www.android-studio.org/" target="_blank" rel="external">http://www.android-studio.org/</a><br>下载jdk:<a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html" target="_blank" rel="external">http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html</a></p><p>安装好android studio后，创建的时候<br>1.创建好一个工程后，第一打开项目的时候会卡很久。卡在一个进度窗口:building ‘android’ Gradle project info<br>2.进入之后，gradle会一直提示失败，点击红字，一个个安装就可以了。<br>3.安装完之后点击运行便可打开模拟器</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;视频:&lt;a href=&quot;http://yun.itheima.com/map/21.html?a5&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://yun.itheima.com/map/21.html?a5&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;安装教程：&lt;
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>查找工程里的私有api</title>
+    <link href="http://yoursite.com/2017/12/23/%E6%9F%A5%E6%89%BE%E5%B7%A5%E7%A8%8B%E9%87%8C%E7%9A%84%E7%A7%81%E6%9C%89api/"/>
+    <id>http://yoursite.com/2017/12/23/查找工程里的私有api/</id>
+    <published>2017-12-23T00:47:41.000Z</published>
+    <updated>2019-01-02T06:16:38.091Z</updated>
+    
+    <content type="html"><![CDATA[<p>grep -r GraphicsServices.framework .<br>grep -r dlsym .<br>grep -r dlopen .</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;grep -r GraphicsServices.framework .&lt;br&gt;grep -r dlsym .&lt;br&gt;grep -r dlopen .&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-Theos使用</title>
+    <link href="http://yoursite.com/2017/12/15/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-Theos%E4%BD%BF%E7%94%A8/"/>
+    <id>http://yoursite.com/2017/12/15/iOS逆向开发流程-Theos使用/</id>
+    <published>2017-12-15T01:58:19.000Z</published>
+    <updated>2017-12-15T07:08:38.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="1-安装dpkg"><a href="#1-安装dpkg" class="headerlink" title="1.安装dpkg"></a>1.安装dpkg</h2><p>sudo brew install dpkg</p><p>dpkg是Theos依赖的工具之一，dpkg是Debian Packager的缩写。我们可以使用dpkg来制作deb，Theos开发的插件都将会以deb的格式进行发布的。所以我在安装Theos之前要安装dpkg, 当然此处我们使用强大的brew来完成dpkg的安装。</p><h2 id="2-安装ldid"><a href="#2-安装ldid" class="headerlink" title="2.安装ldid"></a>2.安装ldid</h2><p>sudo brew install ldid</p><p>在Theos开发插件中，iOS文件的签名是使用ldid工具来完成的，也就是说ldid取代了Xcode自带的Codesign。下方就是ldid的安装过程。</p><h2 id="3-Theos安装"><a href="#3-Theos安装" class="headerlink" title="3.Theos安装"></a>3.Theos安装</h2><p>export THEOS=~/theos</p><p>git clone –recursive <a href="https://github.com/theos/theos.git" target="_blank" rel="external">https://github.com/theos/theos.git</a> $THEOS</p><p>这样就吧theos安装到了 ~/thoes 目录下。</p><p>下载好Theos后，要修改一下文件的权限，cd到~/下 执行如下命令</p><p>sudo chown (id−u):(id−u):(id -g) theos</p><p>至此，Theos安装完毕，就可以开启你的Theos之旅了。</p><h2 id="4-创建theos工程"><a href="#4-创建theos工程" class="headerlink" title="4.创建theos工程"></a>4.创建theos工程</h2><p>每次打开终端创建工程的时候</p><h5 id="1-配置-THEOS"><a href="#1-配置-THEOS" class="headerlink" title="1.配置$THEOS"></a>1.配置$THEOS</h5><p>export THEOS=theos文件所在路径</p><p>我这边根据安装目录应该执行的是 export THEOS=~/theos<br>进入到我们要创建实用工具的目录中，使用export定义如下的环境变量，如下所示。下方命令比较简单，你可以这么理解，就是使用export定义了一个变量这个变量的名字是THEOS，该变量中存储的值是~/theos。后边这个路径就是上述我们安装theos的路径了，如果你要使用该路径的话，使用$THEOS代替即可。当然该变量只在当前终端中可用。如下所示。</p><h5 id="2-新建工程-执行-THEOS-bin-nic-pl"><a href="#2-新建工程-执行-THEOS-bin-nic-pl" class="headerlink" title="2.新建工程 执行$THEOS/bin/nic.pl"></a>2.新建工程 执行$THEOS/bin/nic.pl</h5><p>接下来我们就要使用theos来创建我们的工程了，创建工程也是比较简单的，就是调用我们theos目录中bin下的nic.pl命令。具体执行如下所示。在执行nic.pl命令后，会让你选择新建工程的模板，目前theos中内置的是12套模板，当然你可以从网上下载其他的模板。当然我们此处创建的是application_modern类型的工程，所以我们就选2即可，当然，如果你想创建tweak，那么就选11即可，下方我们选择的是第二个模板。</p><p>在选择模板后，紧接着会让你做一系列的操作，这一些列的操作和Xcode新建iOS工程的步骤类似。</p><p>（1）输入你的工程的名字（Project Name，必选项），此处我们工程的名字是FirstTheosApplication。</p><p>（2）输入包名（Package Name），包名的命名规则一般是你们公司域名的倒写，然后后边加上你的工程名字，此处我就随便写了一个，就是下方的com.ludashi.firsttheosapplication。</p><p>（3）输入作者的名字（Author/Maintainer Name）, 此处我们输入的是Mr.LuDashi</p><p>（4）然后如数类名的前缀（Class name prefix）, 此处我们输入的是CE。</p><p>经过上述配置后，我们的工程就创建好了。</p><h5 id="3-编译打包前的准备工作"><a href="#3-编译打包前的准备工作" class="headerlink" title="3.编译打包前的准备工作"></a>3.编译打包前的准备工作</h5><p>cd到工程目录下。</p><p>export SDKVERSION=11.1<br>export THEOS_DEVICE_IP=192.168.2.204</p><p>接着我们要做一些编译打包前的准备工作，SDKVERSION是编译工程时所使用的SDK，因为本机Xcode中是11.1的SDK，所以我们知道的SDKVERSION是11.1。指定完编译所需的SDK后，我们需要指定打包后的文件所安装设备的IP地址，使用THEOS_DEVICE_IP来指定。下方的IP地址是一个越狱手机的IP地址。</p><h5 id="4-进行编译"><a href="#4-进行编译" class="headerlink" title="4.进行编译"></a>4.进行编译</h5><p>在工程目录下，执行make</p><blockquote><p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>==&gt; Compiling main.m (armv7)…<br>==&gt; Compiling CEAppDelegate.m (armv7)…<br>==&gt; Compiling CERootViewController.m (armv7)…<br>==&gt; Linking application FirstTheosApplication (armv7)…<br>==&gt; Compiling main.m (arm64)…<br>==&gt; Compiling CEAppDelegate.m (arm64)…<br>==&gt; Compiling CERootViewController.m (arm64)…<br>==&gt; Linking application FirstTheosApplication (arm64)…<br>==&gt; Merging application FirstTheosApplication…<br>==&gt; Signing FirstTheosApplication…</p></blockquote><h5 id="5-进行打包"><a href="#5-进行打包" class="headerlink" title="5.进行打包"></a>5.进行打包</h5><p>make package</p><p>编译完成后，我们要讲项目进行打包，这样我们的越狱设备才能进行安装。下方是调用make package命令进行项目的打包。打包后会生成后缀名为deb的安装包。</p><blockquote><p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make package<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>make[2]: Nothing to be done for `internal-application-compile’.<br>> Making stage for application FirstTheosApplication…<br>Can’t locate IO/Compress/Lzma.pm in @INC (you may need to install the IO::Compress::Lzma module) (@INC contains: /usr/local/Cellar/perl/5.26.1/lib/perl5/site_perl/5.26.1/darwin-thread-multi-2level /usr/local/Cellar/perl/5.26.1/lib/perl5/site_perl/5.26.1 /usr/local/Cellar/perl/5.26.1/lib/perl5/5.26.1/darwin-thread-multi-2level /usr/local/Cellar/perl/5.26.1/lib/perl5/5.26.1 /usr/local/lib/perl5/site_perl/5.26.1/darwin-thread-multi-2level /usr/local/lib/perl5/site_perl/5.26.1) at /Users/chenzhangquan/theos/bin/dm.pl line 12.<br>BEGIN failed–compilation aborted at /Users/chenzhangquan/theos/bin/dm.pl line 12.<br>make: <em>*</em> [internal-package] Error 2</p></blockquote><p>这边报错了，需要执行两句指令才可以：</p><p>查看github查找原因后:<a href="https://github.com/theos/theos/issues/273" target="_blank" rel="external">https://github.com/theos/theos/issues/273</a><br>解决办法为，执行一下两句指令。</p><blockquote><p>sudo cpan Compress::Raw::Lzma<br>sudo cpan IO::Compress::Lzma</p></blockquote><p>执行完再执行  make package</p><blockquote><p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make package<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>make[2]: Nothing to be done for <code>internal-application-compile&#39;.\&gt; Making stage for application FirstTheosApplication…dm.pl: building package</code>com.ludashi.firsttheosapplication:iphoneos-arm’ in `./packages/com.ludashi.firsttheosapplication_0.0.1-3+debug_iphoneos-arm.deb’</p></blockquote><p>工程目录下会多处一个packages文件夹，其目录下会多一个deb文件。</p><h5 id="6-安装"><a href="#6-安装" class="headerlink" title="6.安装"></a>6.安装</h5><p>make install</p><p>将该安装包，安装到相应的越狱设备。因为上面我们已经配置了越狱设备的IP地址，并且保证该台越狱设备可以通过ssh进行连接，所以我们直接调用make install命令就可以进行项目的安装。在安装过程中会让你输入ssh登录设备的密码，输入后会显示安装成功的操作，如下所示。</p><h5 id="7-安装后的效果"><a href="#7-安装后的效果" class="headerlink" title="7.安装后的效果"></a>7.安装后的效果</h5><p>下方就是我们项目安装后的效果。打开Cydia，选择已安装Tab, 会看到我们刚才安装的FirstTheosApplication（实用工具），我们可以点进去进行查看，其中的一些信息大部分是我们刚才配置的信息。到此我们一个完整的流程就走完了。</p><h2 id="5-Tweak创建、编译、打包与安装"><a href="#5-Tweak创建、编译、打包与安装" class="headerlink" title="5.Tweak创建、编译、打包与安装"></a>5.Tweak创建、编译、打包与安装</h2><h5 id="1-新建工程-执行-THEOS-bin-nic-pl-选择11"><a href="#1-新建工程-执行-THEOS-bin-nic-pl-选择11" class="headerlink" title="1.新建工程 执行$THEOS/bin/nic.pl 选择11"></a>1.新建工程 执行$THEOS/bin/nic.pl 选择11</h5><blockquote><p>chenzhauandeMBP:theos chenzhangquan$ $THEOS/bin/nic.pl<br>NIC 2.0 - New Instance Creator<br>-—————————–<br>  [1.] iphone/activator_event<br>  [2.] iphone/application_modern<br>  [3.] iphone/cydget<br>  [4.] iphone/flipswitch_switch<br>  [5.] iphone/framework<br>  [6.] iphone/ios7_notification_center_widget<br>  [7.] iphone/library<br>  [8.] iphone/notification_center_widget<br>  [9.] iphone/preference_bundle_modern<br>  [10.] iphone/tool<br>  [11.] iphone/tweak<br>  [12.] iphone/xpc_service<br>Choose a Template (required): 11<br>Project Name (required): LockScreenAlter<br>Package Name [com.yourcompany.lockscreenalter]:<br>Author/Maintainer Name [陈樟权]:<br>[iphone/tweak] MobileSubstrate Bundle filter [com.apple.springboard]:<br>[iphone/tweak] List of applications to terminate upon installation (space-separated, ‘-‘ for none) [SpringBoard]:<br>Instantiating iphone/tweak in lockscreenalter/…<br>Done.</p></blockquote><h5 id="2-修改以下文件。"><a href="#2-修改以下文件。" class="headerlink" title="2.修改以下文件。"></a>2.修改以下文件。</h5><h6 id="1-MakeFile的头部添加"><a href="#1-MakeFile的头部添加" class="headerlink" title="(1).MakeFile的头部添加"></a>(1).MakeFile的头部添加</h6><p>export THEOS_DEVICE_IP = 192.168.2.204<br>export ARCHS = armv7 arm64<br>export TARGET = iphone:clang:latest:8.0</p><h6 id="2-Tweak-xm-添加"><a href="#2-Tweak-xm-添加" class="headerlink" title="(2).Tweak.xm 添加"></a>(2).Tweak.xm 添加</h6><p>%hook ZQTabbar1Controller<br>-(void)reloadViewWithDict:(NSDictionary <em>)resultData{<br>   %orig;<br>   UIAlertView </em>alert = [[UIAlertView alloc] initWithTitle:@”Come to <a href="http://bbs.iosre.com" target="_blank" rel="external">http://bbs.iosre.com</a> for more fun!” message:nil delegate:self cancelButtonTitle:@”OK” otherButtonTitles:nil];<br>   [alert show];<br>   [alert release]; }<br>%end</p><h6 id="3-修改LockScreenAlter-plist"><a href="#3-修改LockScreenAlter-plist" class="headerlink" title="(3).修改LockScreenAlter.plist"></a>(3).修改LockScreenAlter.plist</h6><p>  把bundleID改为目标app的bundleID</p><h5 id="3-make-三连击"><a href="#3-make-三连击" class="headerlink" title="3.make 三连击"></a>3.make 三连击</h5><p>make<br>make package<br>make install</p><h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>Theos使用方法参考<br><a href="https://www.cnblogs.com/ludashi/p/5714095.html" target="_blank" rel="external">https://www.cnblogs.com/ludashi/p/5714095.html</a><br><a href="http://blog.csdn.net/u013538542/article/details/72811142" target="_blank" rel="external">http://blog.csdn.net/u013538542/article/details/72811142</a><br>Tweak语法用法<br><a href="http://iphonedevwiki.net/index.php/Logos" target="_blank" rel="external">http://iphonedevwiki.net/index.php/Logos</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;1-安装dpkg&quot;&gt;&lt;a href=&quot;#1-安装dpkg&quot; class=&quot;headerlink&quot; title=&quot;1.安装dpkg&quot;&gt;&lt;/a&gt;1.安装dpkg&lt;/h2&gt;&lt;p&gt;sudo brew install dpkg&lt;/p&gt;
+&lt;p&gt;dpkg是Theos依赖的工具之
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-越狱机环境搭建流程</title>
+    <link href="http://yoursite.com/2017/12/14/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-%E8%B6%8A%E7%8B%B1%E6%9C%BA%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%E6%B5%81%E7%A8%8B/"/>
+    <id>http://yoursite.com/2017/12/14/iOS逆向开发流程-越狱机环境搭建流程/</id>
+    <published>2017-12-14T00:55:04.000Z</published>
+    <updated>2017-12-14T03:29:41.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>1.打开cydia<br>2.下载openssh<br>3.下载cycript</p><p>注：  可能会下载不成功，那就得注意打开cydia时的弹窗，要更新必要组件<br>     可能更新必要组件也失败，那就点击“变更”页面的左上角刷新，刷新成功后，重启app，再更新必要组件。就可以更新成功了。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;1.打开cydia&lt;br&gt;2.下载openssh&lt;br&gt;3.下载cycript&lt;/p&gt;
+&lt;p&gt;注：  可能会下载不成功，那就得注意打开cydia时的弹窗，要更新必要组件&lt;br&gt;     可能更新必要组件也失败，那就点击“变更”页面的左上角刷新，刷新成功后，重启app，再更新
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-debugserver+lldb</title>
+    <link href="http://yoursite.com/2017/12/11/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-debugserver+lldb/"/>
+    <id>http://yoursite.com/2017/12/11/iOS逆向开发流程-debugserver+lldb/</id>
+    <published>2017-12-11T14:12:36.000Z</published>
+    <updated>2017-12-14T07:57:28.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>一步一步用debugserver + lldb代替gdb进行动态调试</p><h2 id="1-下载ldid"><a href="#1-下载ldid" class="headerlink" title="1.下载ldid"></a>1.下载ldid</h2><p>在mac上下载ldid 执行brew install ldid</p><h2 id="2-从iPad-iPhone上获取debugserver"><a href="#2-从iPad-iPhone上获取debugserver" class="headerlink" title="2.从iPad/iPhone上获取debugserver"></a>2.从iPad/iPhone上获取debugserver</h2><p>scp root@192.168.2.204:/Developer/usr/bin/debugserver /Users/chenzhangquan/Desktop/iOS逆向开发/debugserver</p><h2 id="3-对debugserver进行瘦身"><a href="#3-对debugserver进行瘦身" class="headerlink" title="3.对debugserver进行瘦身"></a>3.对debugserver进行瘦身</h2><p>cd到debugserver目录下 执行lipo -thin arm64 debugserver -output debugserver</p><p>注意不同型号说记对应的内核4（armv7），4s（armv7），5（armv7），5s，iPad air（arm64），6（arm64），6s（arm64）</p><h2 id="4-给debugserver添加task-for-pid权限"><a href="#4-给debugserver添加task-for-pid权限" class="headerlink" title="4.给debugserver添加task_for_pid权限"></a>4.给debugserver添加task_for_pid权限</h2><p>1.给debugserver添加task_for_pid权限后，我们就可以使用LLDB调试其他App了。此部分我们需要一个存储配置信息的xml文件，该文件的内容如下。你可以将下下方的文本进行拷贝，然后存储成ent.xml即可。ent.xml储存在debugserver同目录下</p><blockquote><p>&lt;!DOCTYPE plist PUBLIC “-//Apple//DTD PLIST 1.0//EN” “<a href="http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;" target="_blank" rel="external">http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;</a><br>  &lt;plist version=”1.0”&gt;<br>  &lt;dict&gt;<br>          &lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;get-task-allow&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;task_for_pid-allow&lt;/key&gt;<br>          &lt;true/&gt;<br>          &lt;key&gt;run-unsigned-code&lt;/key&gt;<br>          &lt;true/&gt;<br>  &lt;/dict&gt;<br>  &lt;/plist&gt;</p></blockquote><p>2.cd到debugserver目录下 执行ldid -Sent.xml debugserver</p><p>3.将debugserver拷贝到iOS设备中<br>cd到debugserver目录下 执行scp debugserver root@192.168.2.204:/usr/bin/debugserver</p><p>4.将可执行的权限赋给debugserver<br>将debugserver拷贝到/usr/bin目录下后，执行下方的赋权限的命令，将可执行的权限赋给debugserver，如下所示：<br>cd到/usr/bin 执行chmod +x debugserver</p><p>5.赋完权限后，你就可以使用debugserver命令来开启debuserver了，如下所示：</p><blockquote><p>chenzhangquande-iPad:/usr/bin root# debugserver<br>debugserver-310.2 for arm64.<br>Usage:<br>  debugserver host:port [program-name program-arg1 program-arg2 …]<br>  debugserver /path/file [program-name program-arg1 program-arg2 …]<br>  debugserver host:port –attach=<pid><br>  debugserver /path/file –attach=<pid><br>  debugserver host:port –attach=<process_name><br>  debugserver /path/file –attach=<process_name></process_name></process_name></pid></pid></p></blockquote><h2 id="5-debugserver的开启与LLDB的连接"><a href="#5-debugserver的开启与LLDB的连接" class="headerlink" title="5.debugserver的开启与LLDB的连接"></a>5.debugserver的开启与LLDB的连接</h2><p>在iPad端:<br>运行目标app后,执行debugserver *:12345 -a “Wsloan_40”</p><blockquote><p>chenzhangquande-iPad:/usr/bin root# debugserver <em>:12345 -a “Wsloan_40”<br>debugserver-310.2 for arm64.<br>Attaching to process Wsloan_40…<br>Listening to port 12345 for a connection from </em>…<br>Waiting for debugger instructions for process 0.</p></blockquote><p>在我们iOS设备上执行上述命令的效果如下所示，执行完上述命令后，我们的iOS设备就会等待Mac终端LLDB的接入。</p><p>在Mac端口:<br>启动lldb后，执行process connect connect://127.0.0.1:12345<br>LLDB与debugserver建立完成后，我们就可以使用lldb来调试微信这个应用了</p><blockquote><p>chenzhauandeMBP:iPad air chenzhangquan$ lldb<br>(lldb) process connect connect://192.168.2.204:12345<br>Process 471 stopped</p><ul><li>thread #1: tid = 0x165e, 0x00000001917a5ca0 libsystem_kernel.dylib<code>mach_msg_trap + 8, queue = &#39;com.apple.main-thread&#39;, stop reason = signal SIGSTOP  frame #0: 0x00000001917a5ca0 libsystem_kernel.dylib</code>mach_msg_trap + 8<br>libsystem_kernel.dylib<code>mach_msg_trap:-&gt;  0x1917a5ca0 &lt;+8&gt;: ret    libsystem_kernel.dylib</code>mach_msg_overwrite_trap:<br>  0x1917a5ca4 &lt;+0&gt;: movn   x16, #0x1f<br>  0x1917a5ca8 &lt;+4&gt;: svc    #0x80<br>  0x1917a5cac &lt;+8&gt;: ret    </li></ul></blockquote><p>接下来便可以跟在xcode里一样  调试app了。</p><blockquote><p>(lldb) c    //continue，app继续运行<br>Process 471 resuming<br>(lldb)po [MD5Utils _shortMethodDescription]<br>&lt;MD5Utils: 0x1012e3850&gt;:<br>in MD5Utils:<br>    Class Methods:</p><ul><li>(id) MD5Parameter:(id)arg1; (0x1004d78b8)<ul><li>(id) MD5:(id)arg1; (0x1004d76d0)</li><li>(id) MD5String:(id)arg1; (0x1004d77fc)<br>Instance Methods:</li></ul><ul><li>(id) MD5String:(id)arg1; (0x1004d7cc8)<br>(NSObject …)</li></ul></li></ul></blockquote><p>得到函数地址。</p><p>b 0x1004d78b8 //这样就可以在MD5Parameter方法上打断点了。</p><p>lldb语法:<br><a href="http://lldb.llvm.org/lldb-gdb.html" target="_blank" rel="external">http://lldb.llvm.org/lldb-gdb.html</a><br>lldb使用:<br><a href="http://bbs.iosre.com/t/debugserver-lldb-gdb/65" target="_blank" rel="external">http://bbs.iosre.com/t/debugserver-lldb-gdb/65</a><br><a href="https://www.cnblogs.com/ludashi/p/5730338.html" target="_blank" rel="external">https://www.cnblogs.com/ludashi/p/5730338.html</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;一步一步用debugserver + lldb代替gdb进行动态调试&lt;/p&gt;
+&lt;h2 id=&quot;1-下载ldid&quot;&gt;&lt;a href=&quot;#1-下载ldid&quot; class=&quot;headerlink&quot; title=&quot;1.下载ldid&quot;&gt;&lt;/a&gt;1.下载ldid&lt;/h2&gt;&lt;p&gt;在mac
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-cycript运行时分析</title>
+    <link href="http://yoursite.com/2017/12/08/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-cycript%E8%BF%90%E8%A1%8C%E6%97%B6%E5%88%86%E6%9E%90/"/>
+    <id>http://yoursite.com/2017/12/08/iOS逆向开发流程-cycript运行时分析/</id>
+    <published>2017-12-08T08:48:09.000Z</published>
+    <updated>2017-12-14T02:32:44.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="使用cycript挂载目标APP"><a href="#使用cycript挂载目标APP" class="headerlink" title="使用cycript挂载目标APP"></a>使用cycript挂载目标APP</h2><p>1.运行app，这里我的app名字叫Wsloan_40<br>2.使用ps aux -c|grep 指令搜索app的进程id</p><blockquote><p>chenzhangquande-iPad:~ root# ps aux -c|grep Wsloan_40<br>mobile   11683   2.5  7.1   767000  71144   ??  Ss    9:30AM   0:06.18 Wsloan_40</p></blockquote><p>  此处发现当前运行的app的进程id为11683</p><p>3.使用cycript挂钩目标app</p><blockquote><p>iPhone4:~ root# cycript -p 11683<br>  cy#</p></blockquote><p>  至此cycript便已挂载成功。</p><h2 id="cycript的简单使用"><a href="#cycript的简单使用" class="headerlink" title="cycript的简单使用"></a>cycript的简单使用</h2><p>1.使用cycript打印当前app的appdelegate</p><blockquote><p>cy# UIApp.delegate</p><p>#”&lt;AppDelegate: 0x1555ff90&gt;”</p></blockquote><p>2.使用cycript打印当前app的keyWindow</p><blockquote><p>cy# UIApp.keyWindow</p><p>#”&lt;UIWindow: 0x15563a10; frame = (0 0; 320 480); gestureRecognizers = &lt;NSArray: 0x15594140&gt;; layer = &lt;UIWindowLayer: 0x15594230&gt;&gt;”</p></blockquote><p>3.使用cycript打印当前app的首页的控制器</p><blockquote><p>cy# UIApp.keyWindow.rootViewController.viewControllers[0].visibleViewController</p><p>  #”&lt;ZQTabbar1Controller: 0x12d68fad0&gt;”</p></blockquote><p>4.使用cycript打印当前app的首页的控制器内的属性.如title</p><blockquote><p>cy# var vc = new Instance(0x12d68fad0)</p><p>  #”&lt;ZQTabbar1Controller: 0x12d68fad0&gt;”<br>  cy# vc.title<br>  @”Tab1Main”<br>  cy# vc.title = “aa”<br>  “aa”</p></blockquote><p>  你可以动态的看到你首页的tabbar的标题被修改成了“aa”了。</p><h2 id="使用cycript-hook对象方法"><a href="#使用cycript-hook对象方法" class="headerlink" title="使用cycript hook对象方法"></a>使用cycript hook对象方法</h2><h5 id="无参数的时候"><a href="#无参数的时候" class="headerlink" title="无参数的时候"></a>无参数的时候</h5><p>这里我hook了目标app的一个按钮点击事件“customServceIconClick”</p><blockquote><p>cy# var orig_customServiceIconClick = ZQTabbar1Controller.prototype[‘customServceIconClick’]<br>  (extern “C” void “:customServiceIconClick”(id, SEL))<br>  cy# ZQTabbar1Controller.prototype[‘customServiceIconClick’] = function (){<br>      orig_customServiceIconClick.call(this);<br>      vc.title = “bb”;<br>    }<br>  function () {var e;e=this;orig_customServiceIconClick.call(e);vc.title=”bb”;}</p></blockquote><p>在按钮点的时候，我把首页的标题改成了“bb”</p><h5 id="有参数的时候"><a href="#有参数的时候" class="headerlink" title="有参数的时候"></a>有参数的时候</h5><p>这里我hook了目标app的一个刷新UI的方法，此处传递了个字典，我想拦截并打印出看看。</p><blockquote><p>cy# var a = @{}<br>  @{}<br>  cy# var orig_reloadViewWithDict = ZQTabbar1Controller.prototype[‘reloadViewWithict:’]<br>  (extern “C” void “:reloadViewWithDict:”(id, SEL, id))<br>  cy# ZQTabbar1Controller.prototype[‘reloadViewWithDict:’] = function (arg1){<br>      orig_reloadViewWithDict.call(this,arg1);<br>        a = arg1<br>        }<br>  function (t) {var e;e=this;orig_reloadViewWithDict.call(e,t);a=t;}</p></blockquote><p>在下啦刷新完之后，我去打印a，就能打印出字典里的数据</p><blockquote><p>cy# a<br>  @{“message”:””,”content”:@{}}</p></blockquote><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>  可以运行时打印出控制器的任何属性。<br>  可以运行时修改属性。<br>  可以运行时hook方法。</p><p>  cycript的使用流程参照了:<a href="http://www.blogfshare.com/ioss-cycript.html" target="_blank" rel="external">http://www.blogfshare.com/ioss-cycript.html</a><br>  cycript的语法可以参考 <a href="http://iphonedevwiki.net/index.php/Cycript_Tricks#Replacing_existing_Objective-C_methods" target="_blank" rel="external">http://iphonedevwiki.net/index.php/Cycript_Tricks#Replacing_existing_Objective-C_methods</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;使用cycript挂载目标APP&quot;&gt;&lt;a href=&quot;#使用cycript挂载目标APP&quot; class=&quot;headerlink&quot; title=&quot;使用cycript挂载目标APP&quot;&gt;&lt;/a&gt;使用cycript挂载目标APP&lt;/h2&gt;&lt;p&gt;1.运行app，这里我的ap
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-gdb调试</title>
+    <link href="http://yoursite.com/2017/12/08/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-gdb%E8%B0%83%E8%AF%95/"/>
+    <id>http://yoursite.com/2017/12/08/iOS逆向开发流程-gdb调试/</id>
+    <published>2017-12-08T02:42:40.000Z</published>
+    <updated>2017-12-14T05:39:15.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="一-了解gdb调试基本方式。"><a href="#一-了解gdb调试基本方式。" class="headerlink" title="一.了解gdb调试基本方式。"></a>一.了解gdb调试基本方式。</h2><p><a href="https://www.cnblogs.com/jailbreaker/p/4212997.html" target="_blank" rel="external">https://www.cnblogs.com/jailbreaker/p/4212997.html</a></p><h3 id="1-安装GNU-Debugger。"><a href="#1-安装GNU-Debugger。" class="headerlink" title="1.安装GNU Debugger。"></a>1.安装GNU Debugger。</h3><p>首先安装ios下的gdb调试器，添加源：cydia.radare.org 。搜索 GNU Debugger，安装之。（有些源的GDB好像不能用，这个测试没问题）</p><h3 id="2-ps找到目标进程"><a href="#2-ps找到目标进程" class="headerlink" title="2.ps找到目标进程"></a>2.ps找到目标进程</h3><p>  附ps常用方法:<br>  //查找名字为QQ的app，-c为省略路径<br>  iPhone:~ root# ps aux -c|grep QQ<br>  //查找名字为disco字符的app，并且显示启动参数<br>  iPhone:~ root# ps -ae|grep disco</p><p>  iPhone4:~ root# ps aux -c|grep GDB-Demo<br>  mobile    4769   0.0  1.3   379200   6544   ??  Ss   10:35AM   0:00.54 GDB-Demo<br>至此获取目标app 的pid为4769</p><h3 id="3-使用gdb-附加366号进程"><a href="#3-使用gdb-附加366号进程" class="headerlink" title="3.使用gdb 附加366号进程"></a>3.使用gdb 附加366号进程</h3><p>iPhone4:~ root# gdb -p 4769<br>GNU gdb 6.3.50.20050815-cvs (Fri May 20 08:08:42 UTC 2011)<br>Copyright 2004 Free Software Foundation, Inc.<br>GDB is free software, covered by the GNU General Public License, and you are<br>welcome to change it and/or distribute copies of it under certain conditions.<br>Type “show copying” to see the conditions.<br>There is absolutely no warranty for GDB.  Type “show warranty” for details.<br>This GDB was configured as “–host=arm-apple-darwin9 –target=”.<br>/private/var/root/4769: No such file or directory<br>Attaching to process 4769.<br>0x3b966a58 in ?? ()<br>(gdb)</p><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>在这里只用gdb做了简单的附加操作，其实并没有怎么调试。因为当我做断点的时候，他给我报了一丢错误。<br>后面发现其实xcode在后面也放弃gdb，转用lldb了，我也就直接去看lldb了。</p><p><a href="http://wufawei.com/2013/11/ios-application-security-21/" target="_blank" rel="external">http://wufawei.com/2013/11/ios-application-security-21/</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;一-了解gdb调试基本方式。&quot;&gt;&lt;a href=&quot;#一-了解gdb调试基本方式。&quot; class=&quot;headerlink&quot; title=&quot;一.了解gdb调试基本方式。&quot;&gt;&lt;/a&gt;一.了解gdb调试基本方式。&lt;/h2&gt;&lt;p&gt;&lt;a href=&quot;https://www.c
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>iOS逆向开发流程-砸壳-dumpdecrypted</title>
+    <link href="http://yoursite.com/2017/12/07/iOS%E9%80%86%E5%90%91%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B-%E7%A0%B8%E5%A3%B3-dumpdecrypted/"/>
+    <id>http://yoursite.com/2017/12/07/iOS逆向开发流程-砸壳-dumpdecrypted/</id>
+    <published>2017-12-07T12:14:58.000Z</published>
+    <updated>2018-12-27T01:19:55.768Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="http://www.jianshu.com/p/189afbe3b429" target="_blank" rel="external">http://www.jianshu.com/p/189afbe3b429</a><br><a href="http://www.jianshu.com/p/4da57be23275" target="_blank" rel="external">http://www.jianshu.com/p/4da57be23275</a></p><h2 id="一-连接上越狱手机"><a href="#一-连接上越狱手机" class="headerlink" title="一.连接上越狱手机"></a>一.连接上越狱手机</h2><p>1.准备一台越狱的机子。<br>2.电脑手机连在同个wifi下。<br>3.越狱的机子上进Cydia下载 OPENSSH (有时候装不起来是因为cydia需要更新新东西，cydia会弹更新窗，更新必要组件后下载就可以安装成功了)<br>4.在terminal中敲 ssh root@192.168.x.x  后面是手机在的ip地址<br>5.输入密码，默认密码为:alpine<br>  chenzhangquandeMacBook-Pro:~ chenzhangquan$ ssh root@192.168.0.107<br>  The authenticity of host ‘192.168.0.107 (192.168.0.107)’ can’t be established.<br>  RSA key fingerprint is SHA256:LL3oni3/5ADyPHB7lM9K/ZoCdBoqNEYqdllzlkvwkhw.<br>  Are you sure you want to continue connecting (yes/no)? yes<br>  Warning: Permanently added ‘192.168.0.107’ (RSA) to the list of known hosts.<br>  root@192.168.0.107’s password:<br>  iPhone4:~ root# ls<br>  至此就进入越狱的手机了。</p><h2 id="二-找出反编译APP的Documents目录路径"><a href="#二-找出反编译APP的Documents目录路径" class="headerlink" title="二.找出反编译APP的Documents目录路径"></a>二.找出反编译APP的Documents目录路径</h2><p>1.把其他app都退出，只留目标app。<br>2.在终端上敲 ps -e，会出现<br>  iPhone4:~ root# ps -e<br>      PID TTY           TIME CMD<br>      3964 ??         0:00.07 /usr/libexec/afc2d -S -L -d /<br>      3969 ??         0:00.36 /usr/libexec/springboardservicesrelay<br>      4132 ??         1:23.41 /var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Wsloan_40.app<br>      4137 ??         0:01.83 /usr/libexec/pphelper/PPHelperLaunchd<br>      4161 ??         0:00.26 /System/Library/PrivateFrameworks/TouchRemote.framework/Support/touchsetupd<br>      4163 ??         0:01.37 /usr/libexec/securityd<br>Wsloan_40就是我的目标app</p><p>3.越狱的机子上进Cydia下载Cycript<br>4.在终端中输入作以下操作:<br>  iPhone4:~ root# cycript -p Wsloan_40<br>  cy# [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomans:NSUserDomainMask][0]</p><p>  #”file:///var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents/“</p><p>  其中的 /var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents/ 就是我们要找的Documents目录路径</p><h2 id="三-砸壳"><a href="#三-砸壳" class="headerlink" title="三.砸壳"></a>三.砸壳</h2><p>1.<a href="https://github.com/stefanesser/dumpdecrypted" target="_blank" rel="external">https://github.com/stefanesser/dumpdecrypted</a> 下载dumpdecrypted<br>2.进入dumpdecrypted文件夹 执行makechenzhangquandeMacBook-Pro:dumpdecrypted-master chenzhangquan$ make<br>  <code>xcrun --sdk iphoneos --find gcc</code> -Os  -Wimplicit -isysroot <code>xcrun --sdk iphoneos --show-sdk-path</code> -F<code>xcrun --sdk iphoneos --show-sdk-path</code>/System/Library/Frameworks -F<code>xcrun --sdk iphoneos --show-sdk-path</code>/System/Library/PrivateFrameworks -arch armv7 -arch armv7s -arch arm64 -c -o dumpdecrypted.o dumpdecrypted.c<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: unable to lookup item ‘Path’ in SDK ‘iphoneos’<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: unable to lookup item ‘Path’ in SDK ‘iphoneos’<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: SDK “iphoneos” cannot be located<br>  xcrun: error: unable to lookup item ‘Path’ in SDK ‘iphoneos’<br>  clang: warning: no such sysroot directory: ‘-F/System/Library/Frameworks’ [-Wmissing-sysroot]<br>  clang: warning: no such sysroot directory: ‘-F/System/Library/Frameworks’ [-Wmissing-sysroot]<br>  clang: warning: no such sysroot directory: ‘-F/System/Library/Frameworks’ [-Wmissing-sysroot]<br>  dumpdecrypted.c:27:10: fatal error: ‘stdio.h’ file not found</p><p>  #include <stdio.h><br>           ^<br>  1 error generated.<br>  make: <em>*</em> [dumpdecrypted.o] Error 1<br>  报错，终端执行 sudo xcode-select –switch /Applications/Xcode8.0.app/后，在执行make，编译成功<br>至此编译成功砸壳工具dumpdecrypted.dylib</stdio.h></p><p>3.将dumpdecrypted.dylib拷贝到Documents目录下，此处是使用scp方式，也可以使用iFunBox或者PP助手进行文件操作</p><p>chenzhangquandeMacBook-Pro:dumpdecrypted-master chenzhangquan$ scp /Users/chenzhangquan/Desktop/iOS逆向开发/dumpdecrypted-master/dumpdecrypted.dylib root@192.168.0.107:/var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents/<br>root@192.168.0.107’s password:<br>dumpdecrypted.dylib                           100%  193KB   1.3MB/s   00:00</p><p>4.开始砸壳 dumpdecrypted.dylib的具体用法是：DYLD_INSERT_LIBRARIES=/PathFrom/dumpdecrypted.dylib /PathTo</p><p>4.1 cd到/var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents后</p><p>4.2 执行  DYLD_INSERT_LIBRARIES=dumpdecrypted.dylib /var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Wsloan_40.app/Wsloan_40 (此处要添加/Wsloan_40) 如下:</p><p>  iPhone4:/var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents root# DYLD_INSERT_LIBRARIES=dumpdecrypted.dylib /var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Wsloan_40.app/Wsloan_40<br>  mach-o decryption dumper</p><p>  DISCLAIMER: This tool is only meant for security research purposes, not for application crackers.</p><p>  [+] detected 32bit ARM binary in memory.<br>  [+] offset to cryptid found: @0xdcad4(from 0xdc000) = ad4<br>  [+] Found encrypted data at address 00004000 of length 14532608 bytes - type 1.<br>  [+] Opening /private/var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Wsloan_40.app/Wsloan_40 for reading.<br>  [+] Reading header<br>  [+] Detecting header type<br>  [+] Executable is a FAT image - searching for right architecture<br>  [+] Correct arch is at offset 16384 in the file<br>  [+] Opening Wsloan_40.decrypted for writing.<br>  [+] Copying the not encrypted start of the file<br>  [+] Dumping the decrypted data into the file<br>  [+] Copying the not encrypted remainder of the file<br>  [+] Setting the LC_ENCRYPTION_INFO-&gt;cryptid to 0 at offset 4ad4<br>  [+] Closing original file<br>  [+] Closing dump file</p><p>至此发现Documents文件夹下多了一个Wsloan_40.decrypted<br>4.3 还是用scp把这个东西传回mac<br>在本地mac上执行 scp root@192.168.0.107:/var/mobile/Applications/F1BE7862-F90D-4D8E-B600-2BF786FFA5CC/Documents/Wsloan_40.decrypted /Users/chenzhangquan/Desktop/iOS逆向开发/</p><h2 id="四-导出头文"><a href="#四-导出头文" class="headerlink" title="四.导出头文"></a>四.导出头文</h2><p>从Github上下载最新的class-dump源代码，然后用Xcode编译即可生成class-dump(这里比较简单，笔者就不详细说明了)。</p><p>1.导ipa ./class-dump -H /Users/chenzhangquan/Desktop/Wsloan_40\ 2017-12-04\ 14-18-39/Payload/Wsloan_40.app -o /Users/chenzhangquan/Desktop/dddd<br>2.导decrypted ./class-dump –arch armv7 Wsloan_40.decrypted &gt; Wsloan_40.m<br>注意不同型号说记对应的内核4（armv7），4s（armv7），5（armv7），5s，iPad air（arm64），6（arm64），6s（arm64）<br>  （或者执行./class-dump -H –arch armv7 Wsloan_40.decrypted -o /Users/chenzhangquan/Desktop/iOS逆向开发/wsloan/dump  可以导出到一个文件夹内。）<br>至此导出了Wsloan_40.m文件。（或.h文件夹）</p><p>scp root@192.168.0.106:/var/mobile/Library/Keyboard/dynamic-text.dat /Users/chenzhangquan/Desktop/iOS逆向开发/</p><h2 id="五-导出头文（直接能拿到ipa的话）"><a href="#五-导出头文（直接能拿到ipa的话）" class="headerlink" title="五.导出头文（直接能拿到ipa的话）"></a>五.导出头文（直接能拿到ipa的话）</h2><p>class-dump -H 要破解的可执行文件路径 -o 破解后的头文件存放路径</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;&lt;a href=&quot;http://www.jianshu.com/p/189afbe3b429&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.jianshu.com/p/189afbe3b429&lt;/a&gt;&lt;br&gt;&lt;a href=&quot;http
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>wsloan推送测试流程</title>
+    <link href="http://yoursite.com/2017/12/04/wsloan%E6%8E%A8%E9%80%81%E6%B5%8B%E8%AF%95%E6%B5%81%E7%A8%8B/"/>
+    <id>http://yoursite.com/2017/12/04/wsloan推送测试流程/</id>
+    <published>2017-12-04T07:21:16.000Z</published>
+    <updated>2017-12-12T07:45:57.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>推送消息，开发和测试流程</p><p>友盟：<br>需上传com.wsloan测试证书，com.wsloan开发证书</p><p>开发者:真机测试灌入com.wsloan的包<br>上线前测试:<br>    之前流程-》打个com.wsloan的包，用itunes越狱安装<br>    优化流程-》打个adhoc包，真机安装。</p><p>————</p><p>云旺<br>沙盒环境 -》上传com.wsloan.wsloan  测试证书<br>正式环境 -》上传com.wsloan            测试证书<br>正式环境 -》上传com.wsloan            开发证书</p><p>开发者:<br>沙盒环境，真机测试灌入com.wsloan.wsloan<br>正式环境 ，真机测试灌入com.wsloan<br>上线前测试: 打个adhoc包，真机安装。</p><p>adhoc包（正式数据） - 上线前测友盟推送，云旺推送</p><p>测试包 （正式数据）- 不能测友盟，不能测云旺推送</p><p>内侧包（正式数据）- 不能测友盟，不能测云旺推送</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;推送消息，开发和测试流程&lt;/p&gt;
+&lt;p&gt;友盟：&lt;br&gt;需上传com.wsloan测试证书，com.wsloan开发证书&lt;/p&gt;
+&lt;p&gt;开发者:真机测试灌入com.wsloan的包&lt;br&gt;上线前测试:&lt;br&gt;    之前流程-》打个com.wsloan的包，用itunes越狱
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>适配iOS11记录</title>
+    <link href="http://yoursite.com/2017/11/08/%E9%80%82%E9%85%8DiOS11%E8%AE%B0%E5%BD%95/"/>
+    <id>http://yoursite.com/2017/11/08/适配iOS11记录/</id>
+    <published>2017-11-08T05:53:36.000Z</published>
+    <updated>2017-11-08T06:16:34.000Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="http://mp.weixin.qq.com/s/AZFrqL9dnlgA6Vt2sVhxIw" target="_blank" rel="external">http://mp.weixin.qq.com/s/AZFrqL9dnlgA6Vt2sVhxIw</a><br><a href="http://mp.weixin.qq.com/s/W1_0VrchCO50owhJNmJnuQ" target="_blank" rel="external">http://mp.weixin.qq.com/s/W1_0VrchCO50owhJNmJnuQ</a><br><a href="http://mp.weixin.qq.com/s/kOEW_aeo__uv4V9xbkWVvA" target="_blank" rel="external">http://mp.weixin.qq.com/s/kOEW_aeo__uv4V9xbkWVvA</a><br><a href="http://www.jianshu.com/p/48e4e65aaf06" target="_blank" rel="external">http://www.jianshu.com/p/48e4e65aaf06</a><br><a href="http://www.cocoachina.com/bbs/read.php?tid-1726410.html" target="_blank" rel="external">http://www.cocoachina.com/bbs/read.php?tid-1726410.html</a><br><a href="http://www.cocoachina.com/ios/20170921/20623.html" target="_blank" rel="external">http://www.cocoachina.com/ios/20170921/20623.html</a></p><p>关于iOS11适配的一些文章</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;&lt;a href=&quot;http://mp.weixin.qq.com/s/AZFrqL9dnlgA6Vt2sVhxIw&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://mp.weixin.qq.com/s/AZFrqL9dnlgA6Vt2sVhxI
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>xcode8-》xcode9问题</title>
+    <link href="http://yoursite.com/2017/10/13/xcode8-%E3%80%8Bxcode9%E9%97%AE%E9%A2%98/"/>
+    <id>http://yoursite.com/2017/10/13/xcode8-》xcode9问题/</id>
+    <published>2017-10-13T05:54:23.000Z</published>
+    <updated>2017-12-12T07:44:51.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>罗列一下xcode8在向xcode9过度的问题。</p><p>现象1.在xcode9里打开过工程，用模拟器编译后。返回xcode8用模拟器编译会报错。<br>ld: framework not found XXXX for architecture arm64 clang: error: linker command failed with exit code 1 (use -v to see invocation)<br>解决办法： 清理derived data<br>删除 ~/Library/Developer/Xcode/DerivedData/ 目录下的文件即可。</p><p>现象2.xcode8里突然无法使用 comond+／ 来注释<br>     把xcode删掉，使默认打开里无xcode9即可。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;罗列一下xcode8在向xcode9过度的问题。&lt;/p&gt;
+&lt;p&gt;现象1.在xcode9里打开过工程，用模拟器编译后。返回xcode8用模拟器编译会报错。&lt;br&gt;ld: framework not found XXXX for architecture arm64 clang
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>blog迁移到github</title>
+    <link href="http://yoursite.com/2017/09/07/blog%E8%BF%81%E7%A7%BB%E5%88%B0github/"/>
+    <id>http://yoursite.com/2017/09/07/blog迁移到github/</id>
+    <published>2017-09-07T03:27:55.000Z</published>
+    <updated>2017-12-14T07:38:46.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前是想直接把原有vue搭建的页面直接丢到github上<br>但是由于我没有搞https，所以在github上打开博客会发生报错。说我在https页面，却去我的服务器上 请求http接口。<br>然后就有两个选择<br>1.申请域名，搞htpps<br>2.</p><p>1.<a href="https://hexo.io/zh-cn/docs/deployment.html#Git" target="_blank" rel="external">https://hexo.io/zh-cn/docs/deployment.html#Git</a></p><p>2.安装 Hexo<br>  所有必备的应用程序安装完成后，即可使用 npm 安装 Hexo。<br>  $ npm install -g hexo-cli</p><p>3.新建工程<br>  $ cd blog<br>  $ hexo init .<br>  $ npm install<br>  $ hexo server<br>  便可以在 <a href="http://localhost:4000/" target="_blank" rel="external">http://localhost:4000/</a> 预览</p><p>4.更换主题<br>  在<a href="https://hexo.io/themes/" target="_blank" rel="external">https://hexo.io/themes/</a> 找一个喜欢的主题。<br>  比如apollo <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank" rel="external">https://github.com/pinggod/hexo-theme-apollo</a> 按照提示操作<br>  1.安装主题插件，下载主题文件<br>  $ npm install –save hexo-renderer-jade hexo-generator-feed hexo-generator-sitemap hexo-browsersync hexo-generator-archive<br>  $ git clone <a href="https://github.com/pinggod/hexo-theme-apollo.git" target="_blank" rel="external">https://github.com/pinggod/hexo-theme-apollo.git</a> themes/apollo</p><p>  2./修改 _config.yml 的 theme 配置项为 apollo:<br>    theme: apollo</p><pre><code># 在归档页面显示所有文章# 需要上面安装的 hexo-generator-archive 插件支持archive_generator:    per_page: 0    yearly: false    monthly: false    daily: false</code></pre><p>  3.$ hexo server 可以在 <a href="http://localhost:4000/" target="_blank" rel="external">http://localhost:4000/</a> 预览新的主题</p><p> 5.部署到github<br>      1.安装 hexo-deployer-git。<br>      $ npm install hexo-deployer-git –save</p><pre><code>2./修改 _config.yml 文件deploy: type: git repository: https://github.com/ChenZhangQuan/ChenZhangQuan.github.io.git branch: master3.打开 https://chenzhangquan.github.io/ 浏览blog</code></pre><p>6.平时写博客时候的操作<br>  1.在 /source/_posts 目录下生成md文件，编辑文章。<br>  2.hexo s实时查看文章<br>  3.hexo g生成静态文件<br>  4.hexo d推到github<br>  5.github预览</p><p>7.附录 markdown语法使用链接<a href="https://www.appinn.com/markdown/" target="_blank" rel="external">https://www.appinn.com/markdown/</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;之前是想直接把原有vue搭建的页面直接丢到github上&lt;br&gt;但是由于我没有搞https，所以在github上打开博客会发生报错。说我在https页面，却去我的服务器上 请求http接口。&lt;br&gt;然后就有两个选择&lt;br&gt;1.申请域名，搞htpps&lt;br&gt;2.&lt;/p&gt;
+&lt;p
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>hexo 指令集合</title>
+    <link href="http://yoursite.com/2017/09/07/hexo%20%E6%8C%87%E4%BB%A4%E9%9B%86%E5%90%88/"/>
+    <id>http://yoursite.com/2017/09/07/hexo 指令集合/</id>
+    <published>2017-09-07T00:58:24.000Z</published>
+    <updated>2019-01-02T06:17:16.620Z</updated>
+    
+    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&quot;https://hexo.
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+</feed>

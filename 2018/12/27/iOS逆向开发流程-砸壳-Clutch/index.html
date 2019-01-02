@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> iOS逆向开发流程-砸壳-Clutch · SillyGe's blog</title><meta name="description" content="iOS逆向开发流程-砸壳-Clutch - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">iOS逆向开发流程-砸壳-Clutch</h1><div class="post-info">Dec 27, 2018</div><div class="post-content"><h5 id="1-去https-github-com-KJCracks-Clutch-releases-下载clutch"><a href="#1-去https-github-com-KJCracks-Clutch-releases-下载clutch" class="headerlink" title="1. 去https://github.com/KJCracks/Clutch/releases 下载clutch"></a>1. 去<a href="https://github.com/KJCracks/Clutch/releases" target="_blank" rel="external">https://github.com/KJCracks/Clutch/releases</a> 下载clutch</h5><h5 id="2-拷贝Clutch文件拷贝的iPhone的-usr-bin-目录下"><a href="#2-拷贝Clutch文件拷贝的iPhone的-usr-bin-目录下" class="headerlink" title="2. 拷贝Clutch文件拷贝的iPhone的/usr/bin/目录下"></a>2. 拷贝Clutch文件拷贝的iPhone的/usr/bin/目录下</h5><blockquote>
+<pre><code>scp -P 12345 Clutch root@127.0.0.1:/usr/bin/
+</code></pre></blockquote>
+<p>注意:</p>
+<blockquote>
+<p>1.下载的Clutch命令行工具文件的名字可能是Clutch-x.x.x. 需要改名为Clutch</p>
+<p>2.Clutch需要可执行权限</p>
+<pre><code>iPhone:~ root# chmod +x /usr/bin/Clutch
+// 查看说明
+iPhone:~ root# Clutch
+Usage: Clutch [OPTIONS]
+-b --binary-dump &lt;value&gt; Only dump binary files from &gt;specified bundleID
+-d --dump &lt;value&gt;        Dump specified bundleID &gt;     into .ipa file
+-i --print-installed     Print installed applications
+--clean               Clean /var/tmp/clutch directory
+--version             Display version and exit
+-? --help                Display this help and exit
+-n --no-color            Print with colors disabled
+</code></pre><p>3.目前, Clutch在iOS11的非完美越狱是不好使的</p>
+</blockquote>
+<h5 id="3-查看可砸壳的应用"><a href="#3-查看可砸壳的应用" class="headerlink" title="3. 查看可砸壳的应用"></a>3. 查看可砸壳的应用</h5><blockquote>
+<pre><code>iPhone:~ root# Clutch -i
+Installed apps:
+1:   追书神器-全网更新最快的小说阅读器 &lt;com.ifmoc.ZhuiShuShenQi&gt;
+2:   网易云音乐-音乐的力量 &lt;com.netease.cloudmusic&gt;
+3:   微信 &lt;com.tencent.xin&gt;
+</code></pre></blockquote>
+<h5 id="4-砸壳应用"><a href="#4-砸壳应用" class="headerlink" title="4. 砸壳应用"></a>4. 砸壳应用</h5><blockquote>
+<pre><code>iPhone:~ root# Clutch -d com.ifmoc.ZhuiShuShenQi
+</code></pre></blockquote>
+<p>// 或者使用标号</p>
+<blockquote>
+<pre><code>iPhone:~ root# Clutch -d 1
+</code></pre></blockquote>
+<p>砸壳结束后结果如下:</p>
+<blockquote>
+<pre><code>ASLR slide: 0x100060000
+Dumping &lt;YouShaQi&gt; (arm64)
+Patched cryptid (64bit segment)
+Writing new checksum
+DONE: /private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipa
+Finished dumping com.ifmoc.ZhuiShuShenQi in 26.7 seconds
+</code></pre></blockquote>
+<p>其中/private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipa为已经砸壳的ipa包</p>
+<p>将IPA文件拷贝到电脑(在电脑端运行此命令)</p>
+<blockquote>
+<pre><code>scp -P 12345 root@127.0.0.1:/private/var/mobile/Documents/Dumped/com.ifmoc.ZhuiShuShenQi-iOS8.0-(Clutch-2.0.4).ipa ~/Desktop
+</code></pre></blockquote>
+<h5 id="5-验证是否砸壳成功"><a href="#5-验证是否砸壳成功" class="headerlink" title="5. 验证是否砸壳成功"></a>5. 验证是否砸壳成功</h5><p>解压桌面的IPA文件, 找到里面的Mach-O(YouShaQi)文件, 执行如下命令:</p>
+<blockquote>
+<pre><code>otool -l YouShaQi | grep crypt
+cryptoff 16384
+cryptsize 15990784
+cryptid 0
+</code></pre></blockquote>
+<p>此时 cryptid 为 0, 即没有任何加密. 砸壳成功!!!</p>
+</div></article></div></main><footer><div class="paginator"><a href="/2018/12/29/iOS进攻与防御总结/" class="prev">PREV</a><a href="/2018/06/21/及时聊天从零开始-01/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>

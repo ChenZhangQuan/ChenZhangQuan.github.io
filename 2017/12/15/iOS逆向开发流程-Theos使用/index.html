@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="Javascript"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> iOS逆向开发流程-Theos使用 · SillyGe's blog</title><meta name="description" content="iOS逆向开发流程-Theos使用 - SillyGe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/avatar.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://yoursite.com/atom.xml" title="SillyGe's blog"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/avatar.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/u/2161127852?refer_flag=1001030102_&amp;is_all=1" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/ChenZhangQuan" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">iOS逆向开发流程-Theos使用</h1><div class="post-info">Dec 15, 2017</div><div class="post-content"><h2 id="1-安装dpkg"><a href="#1-安装dpkg" class="headerlink" title="1.安装dpkg"></a>1.安装dpkg</h2><p>sudo brew install dpkg</p>
+<p>dpkg是Theos依赖的工具之一，dpkg是Debian Packager的缩写。我们可以使用dpkg来制作deb，Theos开发的插件都将会以deb的格式进行发布的。所以我在安装Theos之前要安装dpkg, 当然此处我们使用强大的brew来完成dpkg的安装。</p>
+<h2 id="2-安装ldid"><a href="#2-安装ldid" class="headerlink" title="2.安装ldid"></a>2.安装ldid</h2><p>sudo brew install ldid</p>
+<p>在Theos开发插件中，iOS文件的签名是使用ldid工具来完成的，也就是说ldid取代了Xcode自带的Codesign。下方就是ldid的安装过程。</p>
+<h2 id="3-Theos安装"><a href="#3-Theos安装" class="headerlink" title="3.Theos安装"></a>3.Theos安装</h2><p>export THEOS=~/theos</p>
+<p>git clone –recursive <a href="https://github.com/theos/theos.git" target="_blank" rel="external">https://github.com/theos/theos.git</a> $THEOS</p>
+<p>这样就吧theos安装到了 ~/thoes 目录下。</p>
+<p>下载好Theos后，要修改一下文件的权限，cd到~/下 执行如下命令</p>
+<p>sudo chown (id−u):(id−u):(id -g) theos</p>
+<p>至此，Theos安装完毕，就可以开启你的Theos之旅了。</p>
+<h2 id="4-创建theos工程"><a href="#4-创建theos工程" class="headerlink" title="4.创建theos工程"></a>4.创建theos工程</h2><p>每次打开终端创建工程的时候</p>
+<h5 id="1-配置-THEOS"><a href="#1-配置-THEOS" class="headerlink" title="1.配置$THEOS"></a>1.配置$THEOS</h5><p>export THEOS=theos文件所在路径</p>
+<p>我这边根据安装目录应该执行的是 export THEOS=~/theos<br>进入到我们要创建实用工具的目录中，使用export定义如下的环境变量，如下所示。下方命令比较简单，你可以这么理解，就是使用export定义了一个变量这个变量的名字是THEOS，该变量中存储的值是~/theos。后边这个路径就是上述我们安装theos的路径了，如果你要使用该路径的话，使用$THEOS代替即可。当然该变量只在当前终端中可用。如下所示。</p>
+<h5 id="2-新建工程-执行-THEOS-bin-nic-pl"><a href="#2-新建工程-执行-THEOS-bin-nic-pl" class="headerlink" title="2.新建工程 执行$THEOS/bin/nic.pl"></a>2.新建工程 执行$THEOS/bin/nic.pl</h5><p>接下来我们就要使用theos来创建我们的工程了，创建工程也是比较简单的，就是调用我们theos目录中bin下的nic.pl命令。具体执行如下所示。在执行nic.pl命令后，会让你选择新建工程的模板，目前theos中内置的是12套模板，当然你可以从网上下载其他的模板。当然我们此处创建的是application_modern类型的工程，所以我们就选2即可，当然，如果你想创建tweak，那么就选11即可，下方我们选择的是第二个模板。</p>
+<p>在选择模板后，紧接着会让你做一系列的操作，这一些列的操作和Xcode新建iOS工程的步骤类似。</p>
+<p>（1）输入你的工程的名字（Project Name，必选项），此处我们工程的名字是FirstTheosApplication。</p>
+<p>（2）输入包名（Package Name），包名的命名规则一般是你们公司域名的倒写，然后后边加上你的工程名字，此处我就随便写了一个，就是下方的com.ludashi.firsttheosapplication。</p>
+<p>（3）输入作者的名字（Author/Maintainer Name）, 此处我们输入的是Mr.LuDashi</p>
+<p>（4）然后如数类名的前缀（Class name prefix）, 此处我们输入的是CE。</p>
+<p>经过上述配置后，我们的工程就创建好了。</p>
+<h5 id="3-编译打包前的准备工作"><a href="#3-编译打包前的准备工作" class="headerlink" title="3.编译打包前的准备工作"></a>3.编译打包前的准备工作</h5><p>cd到工程目录下。</p>
+<p>export SDKVERSION=11.1<br>export THEOS_DEVICE_IP=192.168.2.204</p>
+<p>接着我们要做一些编译打包前的准备工作，SDKVERSION是编译工程时所使用的SDK，因为本机Xcode中是11.1的SDK，所以我们知道的SDKVERSION是11.1。指定完编译所需的SDK后，我们需要指定打包后的文件所安装设备的IP地址，使用THEOS_DEVICE_IP来指定。下方的IP地址是一个越狱手机的IP地址。</p>
+<h5 id="4-进行编译"><a href="#4-进行编译" class="headerlink" title="4.进行编译"></a>4.进行编译</h5><p>在工程目录下，执行make</p>
+<blockquote>
+<p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>==&gt; Compiling main.m (armv7)…<br>==&gt; Compiling CEAppDelegate.m (armv7)…<br>==&gt; Compiling CERootViewController.m (armv7)…<br>==&gt; Linking application FirstTheosApplication (armv7)…<br>==&gt; Compiling main.m (arm64)…<br>==&gt; Compiling CEAppDelegate.m (arm64)…<br>==&gt; Compiling CERootViewController.m (arm64)…<br>==&gt; Linking application FirstTheosApplication (arm64)…<br>==&gt; Merging application FirstTheosApplication…<br>==&gt; Signing FirstTheosApplication…</p>
+</blockquote>
+<h5 id="5-进行打包"><a href="#5-进行打包" class="headerlink" title="5.进行打包"></a>5.进行打包</h5><p>make package</p>
+<p>编译完成后，我们要讲项目进行打包，这样我们的越狱设备才能进行安装。下方是调用make package命令进行项目的打包。打包后会生成后缀名为deb的安装包。</p>
+<blockquote>
+<p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make package<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>make[2]: Nothing to be done for `internal-application-compile’.<br>> Making stage for application FirstTheosApplication…<br>Can’t locate IO/Compress/Lzma.pm in @INC (you may need to install the IO::Compress::Lzma module) (@INC contains: /usr/local/Cellar/perl/5.26.1/lib/perl5/site_perl/5.26.1/darwin-thread-multi-2level /usr/local/Cellar/perl/5.26.1/lib/perl5/site_perl/5.26.1 /usr/local/Cellar/perl/5.26.1/lib/perl5/5.26.1/darwin-thread-multi-2level /usr/local/Cellar/perl/5.26.1/lib/perl5/5.26.1 /usr/local/lib/perl5/site_perl/5.26.1/darwin-thread-multi-2level /usr/local/lib/perl5/site_perl/5.26.1) at /Users/chenzhangquan/theos/bin/dm.pl line 12.<br>BEGIN failed–compilation aborted at /Users/chenzhangquan/theos/bin/dm.pl line 12.<br>make: <em>*</em> [internal-package] Error 2</p>
+</blockquote>
+<p>这边报错了，需要执行两句指令才可以：</p>
+<p>查看github查找原因后:<a href="https://github.com/theos/theos/issues/273" target="_blank" rel="external">https://github.com/theos/theos/issues/273</a><br>解决办法为，执行一下两句指令。</p>
+<blockquote>
+<p>sudo cpan Compress::Raw::Lzma<br>sudo cpan IO::Compress::Lzma</p>
+</blockquote>
+<p>执行完再执行  make package</p>
+<blockquote>
+<p>chenzhauandeMBP:firsttheosapplication chenzhangquan$ make package<br>> Making all for application FirstTheosApplication…<br>==&gt; Copying resource directories into the application wrapper…<br>make[2]: Nothing to be done for <code>internal-application-compile&#39;.
+\&gt; Making stage for application FirstTheosApplication…
+dm.pl: building package</code>com.ludashi.firsttheosapplication:iphoneos-arm’ in `./packages/com.ludashi.firsttheosapplication_0.0.1-3+debug_iphoneos-arm.deb’</p>
+</blockquote>
+<p>工程目录下会多处一个packages文件夹，其目录下会多一个deb文件。</p>
+<h5 id="6-安装"><a href="#6-安装" class="headerlink" title="6.安装"></a>6.安装</h5><p>make install</p>
+<p>将该安装包，安装到相应的越狱设备。因为上面我们已经配置了越狱设备的IP地址，并且保证该台越狱设备可以通过ssh进行连接，所以我们直接调用make install命令就可以进行项目的安装。在安装过程中会让你输入ssh登录设备的密码，输入后会显示安装成功的操作，如下所示。</p>
+<h5 id="7-安装后的效果"><a href="#7-安装后的效果" class="headerlink" title="7.安装后的效果"></a>7.安装后的效果</h5><p>下方就是我们项目安装后的效果。打开Cydia，选择已安装Tab, 会看到我们刚才安装的FirstTheosApplication（实用工具），我们可以点进去进行查看，其中的一些信息大部分是我们刚才配置的信息。到此我们一个完整的流程就走完了。</p>
+<h2 id="5-Tweak创建、编译、打包与安装"><a href="#5-Tweak创建、编译、打包与安装" class="headerlink" title="5.Tweak创建、编译、打包与安装"></a>5.Tweak创建、编译、打包与安装</h2><h5 id="1-新建工程-执行-THEOS-bin-nic-pl-选择11"><a href="#1-新建工程-执行-THEOS-bin-nic-pl-选择11" class="headerlink" title="1.新建工程 执行$THEOS/bin/nic.pl 选择11"></a>1.新建工程 执行$THEOS/bin/nic.pl 选择11</h5><blockquote>
+<p>chenzhauandeMBP:theos chenzhangquan$ $THEOS/bin/nic.pl<br>NIC 2.0 - New Instance Creator<br>-—————————–<br>  [1.] iphone/activator_event<br>  [2.] iphone/application_modern<br>  [3.] iphone/cydget<br>  [4.] iphone/flipswitch_switch<br>  [5.] iphone/framework<br>  [6.] iphone/ios7_notification_center_widget<br>  [7.] iphone/library<br>  [8.] iphone/notification_center_widget<br>  [9.] iphone/preference_bundle_modern<br>  [10.] iphone/tool<br>  [11.] iphone/tweak<br>  [12.] iphone/xpc_service<br>Choose a Template (required): 11<br>Project Name (required): LockScreenAlter<br>Package Name [com.yourcompany.lockscreenalter]:<br>Author/Maintainer Name [陈樟权]:<br>[iphone/tweak] MobileSubstrate Bundle filter [com.apple.springboard]:<br>[iphone/tweak] List of applications to terminate upon installation (space-separated, ‘-‘ for none) [SpringBoard]:<br>Instantiating iphone/tweak in lockscreenalter/…<br>Done.</p>
+</blockquote>
+<h5 id="2-修改以下文件。"><a href="#2-修改以下文件。" class="headerlink" title="2.修改以下文件。"></a>2.修改以下文件。</h5><h6 id="1-MakeFile的头部添加"><a href="#1-MakeFile的头部添加" class="headerlink" title="(1).MakeFile的头部添加"></a>(1).MakeFile的头部添加</h6><p>export THEOS_DEVICE_IP = 192.168.2.204<br>export ARCHS = armv7 arm64<br>export TARGET = iphone:clang:latest:8.0</p>
+<h6 id="2-Tweak-xm-添加"><a href="#2-Tweak-xm-添加" class="headerlink" title="(2).Tweak.xm 添加"></a>(2).Tweak.xm 添加</h6><p>%hook ZQTabbar1Controller<br>-(void)reloadViewWithDict:(NSDictionary <em>)resultData{<br>   %orig;<br>   UIAlertView </em>alert = [[UIAlertView alloc] initWithTitle:@”Come to <a href="http://bbs.iosre.com" target="_blank" rel="external">http://bbs.iosre.com</a> for more fun!” message:nil delegate:self cancelButtonTitle:@”OK” otherButtonTitles:nil];<br>   [alert show];<br>   [alert release]; }<br>%end</p>
+<h6 id="3-修改LockScreenAlter-plist"><a href="#3-修改LockScreenAlter-plist" class="headerlink" title="(3).修改LockScreenAlter.plist"></a>(3).修改LockScreenAlter.plist</h6><p>  把bundleID改为目标app的bundleID</p>
+<h5 id="3-make-三连击"><a href="#3-make-三连击" class="headerlink" title="3.make 三连击"></a>3.make 三连击</h5><p>make<br>make package<br>make install</p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>Theos使用方法参考<br><a href="https://www.cnblogs.com/ludashi/p/5714095.html" target="_blank" rel="external">https://www.cnblogs.com/ludashi/p/5714095.html</a><br><a href="http://blog.csdn.net/u013538542/article/details/72811142" target="_blank" rel="external">http://blog.csdn.net/u013538542/article/details/72811142</a><br>Tweak语法用法<br><a href="http://iphonedevwiki.net/index.php/Logos" target="_blank" rel="external">http://iphonedevwiki.net/index.php/Logos</a></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2017/12/23/查找工程里的私有api/" class="prev">PREV</a><a href="/2017/12/14/iOS逆向开发流程-越狱机环境搭建流程/" class="next">NEXT</a></div><div class="copyright"><p>© 2015 - 2019 <a href="http://yoursite.com">SillyGe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script></body></html>
